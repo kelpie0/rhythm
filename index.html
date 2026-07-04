@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rhythm.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: #eeeeee;
+            font-family: 'DM Sans', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            background-color: #0a0a0a;
+            border-left: 1px solid #1a1a1a;
+            border-right: 1px solid #1a1a1a;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        #drop-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 5, 5, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10;
+            pointer-events: auto;
+            transition: opacity 0.5s ease, background-color 0.3s ease;
+            opacity: 1;
+        }
+
+        #drop-zone.dragover {
+            background: rgba(15, 15, 15, 0.98);
+        }
+
+        #drop-zone.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 { margin: 0 0 8px 0; font-size: 36px; font-weight: 400; letter-spacing: -1.5px; }
+        p { font-size: 16px; color: #666; margin: 0; font-weight: 400; }
+        
+        .hint { font-size: 12px; color: #444; margin-top: 30px; position: absolute; bottom: 40px;}
+    </style>
+</head>
+<body>
+
+    <div id="drop-zone">
+        <h1>rhythm.</h1>
+        <p>drop an mp3 or wav here.</p>
+        <p class="hint">controls: a, s, k, l | press esc to quit</p>
+    </div>
+
+    <canvas id="gameCanvas" width="560" height="800"></canvas>
+
+    <script>
+        // --- GAME CONFIGURATION ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const dropZone = document.getElementById('drop-zone');
+
+        const config = {
+            keys: ['a', 's', 'k', 'l'],
+            lanes: 4,
+            laneWidth: 140,     // Bigger lanes
+            noteRadius: 48,     // Bigger buttons
+            hitPosition: 680,   // Moved down slightly
+            scrollSpeed: 1100,  
+            hitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
+            bpm: 120, 
+        };
+
+        // --- GAME STATE ---
+        let audioCtx, audioSource, audioBuffer;
+        let gameStartTime = 0;
+        let isPlaying = false;
+        let animationFrameId;
+        
+        let notes = [];
+        let ripples = []; // Array for click ripple animations
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let activeFlashes = [0, 0, 0, 0]; 
+        let feedbackText = { text: "", alpha: 0, scale: 1, color: "", yOffset: 0 };
+
+        // --- INPUT HANDLING ---
+        const keyState = { 0: false, 1: false, 2: false, 3: false };
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isPlaying) {
+                endGame("game stopped.");
+                return;
+            }
+
+            if (e.repeat) return;
+            const lane = config.keys.indexOf(e.key.toLowerCase());
+            if (lane !== -1 && isPlaying) {
+                keyState[lane] = true;
+                activeFlashes[lane] = 1.0;
+                createRipple(lane);
+                handleHit(lane);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const lane = config.keys.indexOf(e.key.toLowerCase());
+            if (lane !== -1) {
+                keyState[lane] = false;
+            }
+        });
+
+        // --- DRAG & DROP LOGIC ---
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('audio/')) {
+                dropZone.innerHTML = "<h1>loading...</h1><p>processing audio data.</p>";
+                loadAudioFile(file);
+            } else {
+                alert("please drop a valid audio file (.mp3, .wav)");
+                resetMenu("drop an mp3 or wav here.");
+            }
+        });
+
+        // --- AUDIO & NOTE GENERATION ---
+        async function loadAudioFile(file) {
+            // Ensure audio context exists and is running
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+                    dropZone.innerHTML = "<h1>ready.</h1><p>click anywhere to start.</p>";
+                    dropZone.addEventListener('click', startGame, { once: true });
+                } catch (err) {
+                    alert("error decoding audio.");
+                    resetMenu("drop an mp3 or wav here.");
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function startGame() {
+            dropZone.classList.add('hidden');
+            
+            // Reset stats
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            ripples = [];
+            
+            generateInfiniteChart(audioBuffer.duration);
+            
+            audioSource = audioCtx.createBufferSource();
+            audioSource.buffer = audioBuffer;
+            audioSource.connect(audioCtx.destination);
+            
+            // Return to menu when track finishes naturally
+            audioSource.onended = () => {
+                if (isPlaying) endGame("track finished.");
+            };
+            
+            const delay = 1.5; 
+            gameStartTime = audioCtx.currentTime + delay;
+            audioSource.start(gameStartTime);
+            isPlaying = true;
+            
+            gameLoop();
+        }
+
+        function endGame(message) {
+            isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            
+            if (audioSource) {
+                audioSource.onended = null; // prevent double triggers
+                try { audioSource.stop(); } catch(e) {}
+                audioSource.disconnect();
+            }
+            
+            resetMenu(`${message} score: ${score} | max combo: ${maxCombo}<br><br>drop another file to play again.`);
+        }
+
+        function resetMenu(msg) {
+            dropZone.classList.remove('hidden');
+            dropZone.innerHTML = `<h1>rhythm.</h1><p style="text-align:center; line-height:1.5;">${msg}</p><p class="hint">controls: a, s, k, l | press esc to quit</p>`;
+        }
+
+        function generateInfiniteChart(duration) {
+            notes = [];
+            const beatInterval = 60 / config.bpm;
+            let currentTime = 1.0; 
+
+            while (currentTime < duration - 1) {
+                const lane = Math.floor(Math.random() * 4);
+                const isHold = Math.random() > 0.85;
+                const durationLength = isHold ? (beatInterval * (Math.random() > 0.5 ? 1 : 2)) : 0;
+
+                notes.push({ lane, time: currentTime, duration: durationLength, hit: false, missed: false });
+
+                if (Math.random() > 0.8) {
+                    const extraLane = (lane + 2) % 4;
+                    notes.push({ lane: extraLane, time: currentTime, duration: 0, hit: false, missed: false });
+                }
+                currentTime += (Math.random() > 0.5) ? beatInterval : beatInterval / 2;
+            }
+        }
+
+        // --- SOUND SYNTHESIS (QoL) ---
+        function playHitSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime); 
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); // Keep it quiet so it doesn't overpower music
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playMissSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
+            osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // --- GAME MECHANICS & ANIMATIONS ---
+        function createRipple(lane) {
+            ripples.push({
+                x: lane * config.laneWidth + config.laneWidth / 2,
+                y: config.hitPosition,
+                radius: config.noteRadius,
+                alpha: 0.5
+            });
+        }
+
+        function handleHit(lane) {
+            if (!isPlaying) return;
+            const currentAudioTime = audioCtx.currentTime - gameStartTime;
+
+            let targetNote = null;
+            for (let note of notes) {
+                if (note.lane === lane && !note.hit && !note.missed) {
+                    targetNote = note;
+                    break; 
+                }
+            }
+
+            if (!targetNote) return;
+
+            const timeDiff = Math.abs(targetNote.time - currentAudioTime);
+
+            if (timeDiff <= config.hitWindows.perfect) {
+                targetNote.hit = true;
+                combo++;
+                score += 300;
+                playHitSound();
+                showFeedback("perfect", "#ffffff");
+            } else if (timeDiff <= config.hitWindows.good) {
+                targetNote.hit = true;
+                combo++;
+                score += 100;
+                playHitSound();
+                showFeedback("good", "#888888");
+            } else if (timeDiff <= config.hitWindows.miss) {
+                targetNote.missed = true;
+                combo = 0;
+                playMissSound();
+                showFeedback("miss", "#ff3333");
+            }
+            
+            if (combo > maxCombo) maxCombo = combo;
+        }
+
+        function showFeedback(text, color) {
+            // Adds a slight upward drift to the feedback text
+            feedbackText = { text, color, alpha: 1.0, scale: 1.2, yOffset: 0 };
+        }
+
+        // --- RENDER LOOP ---
+        function gameLoop() {
+            if (!isPlaying) return;
+            const currentAudioTime = audioCtx.currentTime - gameStartTime;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Lanes & Receptors
+            for (let i = 0; i < config.lanes; i++) {
+                const x = i * config.laneWidth;
+                const centerX = x + config.laneWidth / 2;
+                
+                // Subtle lane dividers
+                ctx.strokeStyle = '#111';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+
+                // Key visual flash effect (lane background)
+                if (activeFlashes[i] > 0) {
+                    const gradient = ctx.createLinearGradient(0, config.hitPosition, 0, 0);
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${activeFlashes[i] * 0.08})`);
+                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, 0, config.laneWidth, config.hitPosition);
+                    activeFlashes[i] -= 0.05; 
+                }
+
+                // Hit Receptor ring
+                ctx.beginPath();
+                ctx.arc(centerX, config.hitPosition, config.noteRadius, 0, Math.PI * 2);
+                ctx.fillStyle = keyState[i] ? '#222' : '#0a0a0a';
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = keyState[i] ? '#aaa' : '#333';
+                ctx.stroke();
+            }
+
+            // 2. Draw Ripples
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                const r = ripples[i];
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                r.radius += 4;
+                r.alpha -= 0.04;
+                if (r.alpha <= 0) ripples.splice(i, 1);
+            }
+
+            // 3. Update & Draw Notes
+            for (let note of notes) {
+                if (note.hit) continue;
+
+                const timeUntilHit = note.time - currentAudioTime;
+                
+                if (timeUntilHit < -config.hitWindows.miss && !note.missed) {
+                    note.missed = true;
+                    combo = 0;
+                    playMissSound();
+                    showFeedback("miss", "#ff3333");
+                }
+
+                if (note.missed) continue;
+
+                const yPos = config.hitPosition - (timeUntilHit * config.scrollSpeed);
+
+                if (yPos > -500 && yPos < canvas.height + 200) {
+                    const xPos = note.lane * config.laneWidth;
+                    const centerX = xPos + config.laneWidth / 2;
+                    
+                    const noteColor = (note.lane === 0 || note.lane === 3) ? '#999999' : '#ffffff';
+                    
+                    // Draw Hold Body
+                    if (note.duration > 0) {
+                        const holdHeight = note.duration * config.scrollSpeed;
+                        ctx.fillStyle = (note.lane === 0 || note.lane === 3) ? 'rgba(153, 153, 153, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+                        ctx.fillRect(centerX - config.noteRadius, yPos - holdHeight, config.noteRadius * 2, holdHeight);
+                        
+                        ctx.beginPath();
+                        ctx.arc(centerX, yPos - holdHeight, config.noteRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Draw Note Head
+                    ctx.beginPath();
+                    ctx.arc(centerX, yPos, config.noteRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = noteColor;
+                    ctx.fill();
+                }
+            }
+
+            // 4. Draw UI & Feedback
+            if (feedbackText.alpha > 0) {
+                ctx.save();
+                // Float text upwards
+                feedbackText.yOffset -= 1;
+                ctx.translate(canvas.width / 2, config.hitPosition - 160 + feedbackText.yOffset);
+                ctx.scale(feedbackText.scale, feedbackText.scale);
+                ctx.fillStyle = feedbackText.color;
+                ctx.globalAlpha = feedbackText.alpha;
+                ctx.font = '400 28px "DM Sans"';
+                ctx.textAlign = 'center';
+                ctx.fillText(feedbackText.text, 0, 0);
+                ctx.restore();
+
+                feedbackText.alpha -= 0.02;
+                if (feedbackText.scale > 1.0) feedbackText.scale -= 0.01;
+            }
+
+            // UI Elements
+            ctx.fillStyle = '#666';
+            ctx.font = '400 18px "DM Sans"';
+            ctx.textAlign = 'left';
+            ctx.fillText(`score: ${score}`, 20, 40);
+            
+            if (combo > 5) {
+                // Pulse combo text slightly on beat/increment
+                const comboScale = 1 + (Math.sin(currentAudioTime * Math.PI * 8) * 0.05);
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2 - 80);
+                ctx.scale(comboScale, comboScale);
+                ctx.fillStyle = '#eeeeee';
+                ctx.font = '700 48px "DM Sans"';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${combo}`, 0, 0);
+                ctx.font = '400 16px "DM Sans"';
+                ctx.fillStyle = '#666';
+                ctx.fillText(`combo`, 0, 25);
+                ctx.restore();
+            }
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
