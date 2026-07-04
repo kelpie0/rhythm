@@ -16,7 +16,6 @@
             justify-content: center; align-items: center;
             height: 100vh;
         }
-        /* Canvas is sized via JS to fix pixelation */
         #gameCanvas {
             background-color: #0a0a0a;
             border-left: 1px solid #1a1a1a;
@@ -57,7 +56,6 @@
         const GAME_WIDTH = 560;
         const GAME_HEIGHT = 800;
         
-        // Scale for Retina/High-DPI displays to remove pixelation
         const dpr = window.devicePixelRatio || 1;
         canvas.style.width = GAME_WIDTH + 'px';
         canvas.style.height = GAME_HEIGHT + 'px';
@@ -72,13 +70,12 @@
             laneWidth: 140, noteRadius: 48,
             hitPosition: 680, scrollSpeed: 1100,
             hitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
-            bpm: 120, // Used as baseline for pattern generator
+            bpm: 120, 
         };
 
         // --- GAME STATE ---
         let audioCtx, audioSource, audioBuffer;
         let gameStartTime = 0;
-        let pauseTimeOffset = 0;
         let isPlaying = false;
         let isPaused = false;
         let animationFrameId;
@@ -88,7 +85,6 @@
         let activeFlashes = [0, 0, 0, 0]; 
         let feedbackText = { text: "", alpha: 0, scale: 1, color: "", yOffset: 0 };
         
-        // Metrics
         let stats = { score: 0, combo: 0, maxCombo: 0, perfects: 0, goods: 0, misses: 0, total: 0 };
         const keyState = { 0: false, 1: false, 2: false, 3: false };
 
@@ -113,9 +109,7 @@
 
         window.addEventListener('keyup', (e) => {
             const lane = config.keys.indexOf(e.key.toLowerCase());
-            if (lane !== -1) {
-                keyState[lane] = false;
-            }
+            if (lane !== -1) keyState[lane] = false;
         });
 
         async function togglePause() {
@@ -134,7 +128,7 @@
             e.preventDefault(); dropZone.classList.remove('dragover');
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('audio/')) {
-                dropZone.innerHTML = "<h1>loading...</h1><p>processing audio data.</p>";
+                dropZone.innerHTML = "<h1>loading...</h1><p>analyzing audio frequencies.</p>";
                 loadAudioFile(file);
             } else {
                 resetMenu("please drop a valid audio file (.mp3, .wav)");
@@ -163,7 +157,7 @@
             stats = { score: 0, combo: 0, maxCombo: 0, perfects: 0, goods: 0, misses: 0, total: 0 };
             ripples = []; notes = []; isPaused = false;
             
-            generatePatternChart(audioBuffer.duration);
+            generateSmartChart(audioBuffer);
             
             audioSource = audioCtx.createBufferSource();
             audioSource.buffer = audioBuffer;
@@ -194,57 +188,76 @@
             dropZone.innerHTML = `<h1>rhythm.</h1><p style="text-align:center; line-height:1.5;">${msg}</p><p class="hint">controls: a, s, k, l | pause: p | quit: esc</p>`;
         }
 
-        // --- SMART PATTERN GENERATOR ---
-        function generatePatternChart(duration) {
+        // --- SMART AUDIO ANALYSIS GENERATOR ---
+        function generateSmartChart(buffer) {
+            notes = [];
+            const channelData = buffer.getChannelData(0);
+            const sampleRate = buffer.sampleRate;
+            
+            // Analyze the audio track in 100ms chunks to map volume/energy
+            const chunkSize = Math.floor(sampleRate * 0.1); 
+            let energies = [];
+            
+            for (let i = 0; i < channelData.length; i += chunkSize) {
+                let sum = 0;
+                let count = 0;
+                // Sample every 10th frame for performance
+                for (let j = 0; j < chunkSize && i + j < channelData.length; j += 10) { 
+                    sum += Math.abs(channelData[i + j]);
+                    count++;
+                }
+                energies.push(sum / count);
+            }
+            
+            const avgEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
             const beat = 60 / config.bpm;
-            let time = 2.0; 
-            const patterns = ['single', 'stream', 'jump', 'stairs', 'holds'];
-
-            while (time < duration - 2) {
-                const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+            let time = 1.5;
+            let lastLane = 0;
+            
+            while (time < buffer.duration - 2) {
+                const chunkIdx = Math.floor(time * 10);
+                const energy = energies[chunkIdx] || 0;
                 
-                if (pattern === 'single') {
-                    for(let i=0; i<4; i++) {
-                        notes.push(createNote(time, Math.floor(Math.random()*4), 0));
-                        time += beat;
-                    }
-                } else if (pattern === 'stream') {
-                    let lastLane = Math.floor(Math.random()*4);
-                    for(let i=0; i<8; i++) {
-                        notes.push(createNote(time, lastLane, 0));
-                        lastLane += (Math.random() > 0.5 ? 1 : -1);
-                        if(lastLane < 0) lastLane = 1; if(lastLane > 3) lastLane = 2;
-                        time += beat / 2;
-                    }
-                } else if (pattern === 'jump') {
-                    for(let i=0; i<4; i++) {
-                        let l1 = Math.floor(Math.random()*2);
-                        let l2 = Math.floor(Math.random()*2) + 2;
+                // Base the intensity of the chart on the energy of the song
+                if (energy > avgEnergy * 1.6) {
+                    // High energy -> Chords (Jumps) or Hold Notes
+                    if (Math.random() > 0.6) {
+                        let l1 = Math.floor(Math.random() * 2);
+                        let l2 = Math.floor(Math.random() * 2) + 2;
                         notes.push(createNote(time, l1, 0));
                         notes.push(createNote(time, l2, 0));
-                        time += beat;
+                    } else {
+                        notes.push(createNote(time, Math.floor(Math.random() * 4), beat * 1.5));
                     }
-                } else if (pattern === 'stairs') {
-                    let dir = Math.random() > 0.5 ? 1 : -1;
-                    let lane = dir > 0 ? 0 : 3;
-                    for(let i=0; i<4; i++) {
-                        notes.push(createNote(time, lane, 0));
-                        lane += dir;
-                        time += beat / 2;
+                    time += beat / 2; // Fast sequence
+                } else if (energy > avgEnergy * 0.85) {
+                    // Medium energy -> Streams / Stairs
+                    let nextLane = lastLane + (Math.random() > 0.5 ? 1 : -1);
+                    if (nextLane < 0) nextLane = 1;
+                    if (nextLane > 3) nextLane = 2;
+                    notes.push(createNote(time, nextLane, 0));
+                    lastLane = nextLane;
+                    time += beat / 2; // Fast sequence
+                } else if (energy > avgEnergy * 0.4) {
+                    // Low energy -> Single beats
+                    notes.push(createNote(time, Math.floor(Math.random() * 4), 0));
+                    time += beat; // Slower sequence
+                } else {
+                    // Very quiet -> Sparse notes
+                    if (Math.random() > 0.5) {
+                        notes.push(createNote(time, Math.floor(Math.random() * 4), 0));
                     }
-                    time += beat * 2;
-                } else if (pattern === 'holds') {
-                    let lane = Math.floor(Math.random()*4);
-                    notes.push(createNote(time, lane, beat * 1.5));
-                    time += beat * 2;
-                    notes.push(createNote(time, (lane + 2) % 4, beat * 1.5));
-                    time += beat * 2;
+                    time += beat * 2; // Very slow sequence
                 }
             }
         }
 
         function createNote(time, lane, duration) {
-            return { time, lane, duration, hit: false, missed: false, completed: false, isHolding: false };
+            return { 
+                time, lane, duration, 
+                hit: false, missed: false, 
+                completed: false, isHolding: false, headHit: false 
+            };
         }
 
         // --- GAME MECHANICS ---
@@ -257,9 +270,8 @@
             ripples.push({ x: lane * config.laneWidth + config.laneWidth / 2, y: config.hitPosition, radius: config.noteRadius, alpha: 0.5 });
         }
 
-        function registerHit(judgment, note) {
+        function registerHit(judgment) {
             stats.total++;
-            note.hit = true;
             if (judgment === "perfect") {
                 stats.combo++; stats.perfects++; stats.score += 300;
                 showFeedback("perfect", "#ffffff");
@@ -269,14 +281,13 @@
             } else {
                 stats.combo = 0; stats.misses++;
                 showFeedback("miss", "#ff3333");
-                note.missed = true;
             }
             if (stats.combo > stats.maxCombo) stats.maxCombo = stats.combo;
         }
 
         function handleHit(lane) {
             const currentAudioTime = audioCtx.currentTime - gameStartTime;
-            let targetNote = notes.find(n => n.lane === lane && !n.hit && !n.missed && !n.completed);
+            let targetNote = notes.find(n => n.lane === lane && !n.completed && !n.missed && !n.isHolding);
             if (!targetNote) return;
 
             const timeDiff = Math.abs(targetNote.time - currentAudioTime);
@@ -286,16 +297,19 @@
                                timeDiff <= config.hitWindows.good ? "good" : "miss";
                 
                 if (judgment !== "miss") {
+                    targetNote.headHit = true;
+                    registerHit(judgment); // Register points for hitting the head
+                    
                     if (targetNote.duration > 0) {
-                        targetNote.isHolding = true; // Start the hold
-                        // Don't register the full hit/score until the hold is completed
-                        showFeedback("hold", "#aaaaaa");
+                        targetNote.isHolding = true; 
                     } else {
                         targetNote.completed = true;
-                        registerHit(judgment, targetNote);
+                        targetNote.hit = true;
                     }
                 } else {
-                    registerHit("miss", targetNote);
+                    targetNote.missed = true;
+                    targetNote.completed = true;
+                    registerHit("miss");
                 }
             }
         }
@@ -351,23 +365,28 @@
 
                 const timeUntilHit = note.time - currentAudioTime;
                 
-                // Active Hold Note Logic
+                // Active Hold Note Logic Fix
                 if (note.isHolding && !isPaused) {
                     if (!keyState[note.lane]) {
                         // Let go early = MISS
                         note.isHolding = false;
-                        registerHit("miss", note);
+                        note.completed = true;
+                        note.missed = true;
+                        registerHit("miss"); 
                     } else if (currentAudioTime >= note.time + note.duration) {
-                        // Successfully held to the end
+                        // Successfully held to the end = BONUS PERFECT
                         note.isHolding = false;
                         note.completed = true;
-                        registerHit("perfect", note);
+                        note.hit = true;
+                        registerHit("perfect"); 
                     }
                 }
 
                 // Initial Miss Logic (passed the receptor without pressing)
-                if (timeUntilHit < -config.hitWindows.miss && !note.missed && !note.isHolding) {
-                    registerHit("miss", note);
+                if (timeUntilHit < -config.hitWindows.miss && !note.headHit && !note.missed) {
+                    note.missed = true;
+                    note.completed = true;
+                    registerHit("miss");
                 }
 
                 if (note.missed) continue;
