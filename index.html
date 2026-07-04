@@ -188,20 +188,17 @@
             dropZone.innerHTML = `<h1>rhythm.</h1><p style="text-align:center; line-height:1.5;">${msg}</p><p class="hint">controls: a, s, k, l | pause: p | quit: esc</p>`;
         }
 
-        // --- SMART AUDIO ANALYSIS GENERATOR ---
+        // --- SMART AUDIO ANALYSIS GENERATOR (WITH COLLISION FIX) ---
         function generateSmartChart(buffer) {
             notes = [];
             const channelData = buffer.getChannelData(0);
             const sampleRate = buffer.sampleRate;
             
-            // Analyze the audio track in 100ms chunks to map volume/energy
             const chunkSize = Math.floor(sampleRate * 0.1); 
             let energies = [];
             
             for (let i = 0; i < channelData.length; i += chunkSize) {
-                let sum = 0;
-                let count = 0;
-                // Sample every 10th frame for performance
+                let sum = 0, count = 0;
                 for (let j = 0; j < chunkSize && i + j < channelData.length; j += 10) { 
                     sum += Math.abs(channelData[i + j]);
                     count++;
@@ -212,42 +209,77 @@
             const avgEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
             const beat = 60 / config.bpm;
             let time = 1.5;
-            let lastLane = 0;
+            
+            // TRACKS WHEN EACH LANE IS FREE (Time in seconds)
+            let laneBusyUntil = [0, 0, 0, 0];
+
+            function getFreeLane(atTime) {
+                let freeLanes = [];
+                for (let i = 0; i < 4; i++) {
+                    if (laneBusyUntil[i] <= atTime) freeLanes.push(i);
+                }
+                if (freeLanes.length === 0) return -1;
+                return freeLanes[Math.floor(Math.random() * freeLanes.length)];
+            }
             
             while (time < buffer.duration - 2) {
                 const chunkIdx = Math.floor(time * 10);
                 const energy = energies[chunkIdx] || 0;
                 
-                // Base the intensity of the chart on the energy of the song
                 if (energy > avgEnergy * 1.6) {
-                    // High energy -> Chords (Jumps) or Hold Notes
                     if (Math.random() > 0.6) {
-                        let l1 = Math.floor(Math.random() * 2);
-                        let l2 = Math.floor(Math.random() * 2) + 2;
-                        notes.push(createNote(time, l1, 0));
-                        notes.push(createNote(time, l2, 0));
+                        // CHORDS (Jumps) - Requires 2 free lanes
+                        let l1 = getFreeLane(time);
+                        if (l1 !== -1) {
+                            laneBusyUntil[l1] = time + 0.1; // Reserve briefly
+                            let l2 = getFreeLane(time);
+                            if (l2 !== -1) {
+                                laneBusyUntil[l2] = time + 0.1;
+                                notes.push(createNote(time, l1, 0));
+                                notes.push(createNote(time, l2, 0));
+                            } else {
+                                notes.push(createNote(time, l1, 0)); // Fallback to single
+                            }
+                        }
                     } else {
-                        notes.push(createNote(time, Math.floor(Math.random() * 4), beat * 1.5));
+                        // HOLD NOTES (Short, Medium, or Long)
+                        let lane = getFreeLane(time);
+                        if (lane !== -1) {
+                            const holdLengths = [0.5, 1.0, 1.5, 2.0];
+                            const holdMult = holdLengths[Math.floor(Math.random() * holdLengths.length)];
+                            const holdDuration = beat * holdMult;
+                            
+                            laneBusyUntil[lane] = time + holdDuration + 0.1; // Reserve until hold is over
+                            notes.push(createNote(time, lane, holdDuration));
+                        }
                     }
-                    time += beat / 2; // Fast sequence
+                    time += beat / 2; 
                 } else if (energy > avgEnergy * 0.85) {
-                    // Medium energy -> Streams / Stairs
-                    let nextLane = lastLane + (Math.random() > 0.5 ? 1 : -1);
-                    if (nextLane < 0) nextLane = 1;
-                    if (nextLane > 3) nextLane = 2;
-                    notes.push(createNote(time, nextLane, 0));
-                    lastLane = nextLane;
-                    time += beat / 2; // Fast sequence
-                } else if (energy > avgEnergy * 0.4) {
-                    // Low energy -> Single beats
-                    notes.push(createNote(time, Math.floor(Math.random() * 4), 0));
-                    time += beat; // Slower sequence
-                } else {
-                    // Very quiet -> Sparse notes
-                    if (Math.random() > 0.5) {
-                        notes.push(createNote(time, Math.floor(Math.random() * 4), 0));
+                    // STREAMS (Single fast notes)
+                    let lane = getFreeLane(time);
+                    if (lane !== -1) {
+                        laneBusyUntil[lane] = time + 0.1;
+                        notes.push(createNote(time, lane, 0));
                     }
-                    time += beat * 2; // Very slow sequence
+                    time += beat / 2; 
+                } else if (energy > avgEnergy * 0.4) {
+                    // BEATS (Single slow notes)
+                    let lane = getFreeLane(time);
+                    if (lane !== -1) {
+                        laneBusyUntil[lane] = time + 0.1;
+                        notes.push(createNote(time, lane, 0));
+                    }
+                    time += beat; 
+                } else {
+                    // QUIET (Sparse notes)
+                    if (Math.random() > 0.5) {
+                        let lane = getFreeLane(time);
+                        if (lane !== -1) {
+                            laneBusyUntil[lane] = time + 0.1;
+                            notes.push(createNote(time, lane, 0));
+                        }
+                    }
+                    time += beat * 2; 
                 }
             }
         }
@@ -298,7 +330,7 @@
                 
                 if (judgment !== "miss") {
                     targetNote.headHit = true;
-                    registerHit(judgment); // Register points for hitting the head
+                    registerHit(judgment); 
                     
                     if (targetNote.duration > 0) {
                         targetNote.isHolding = true; 
@@ -382,7 +414,7 @@
                     }
                 }
 
-                // Initial Miss Logic (passed the receptor without pressing)
+                // Initial Miss Logic
                 if (timeUntilHit < -config.hitWindows.miss && !note.headHit && !note.missed) {
                     note.missed = true;
                     note.completed = true;
@@ -407,13 +439,11 @@
                     if (note.duration > 0) {
                         ctx.fillStyle = (note.lane === 0 || note.lane === 3) ? 'rgba(153, 153, 153, 0.2)' : 'rgba(255, 255, 255, 0.2)';
                         
-                        // Prevent drawing body going upwards if holding
                         const bodyHeight = yHead - yTail;
                         if (bodyHeight > 0) {
                             ctx.fillRect(centerX - config.noteRadius, yTail, config.noteRadius * 2, bodyHeight);
                         }
                         
-                        // Tail cap
                         ctx.beginPath(); ctx.arc(centerX, yTail, config.noteRadius, 0, Math.PI * 2); ctx.fill();
                     }
 
