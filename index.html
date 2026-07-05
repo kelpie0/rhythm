@@ -38,62 +38,114 @@
         p { font-size: 16px; color: #666; margin: 0; font-weight: 400; text-align: center; line-height: 1.5; }
         .hint { font-size: 12px; color: #444; margin-top: 30px; position: absolute; bottom: 40px;}
         
-        /* Custom UI Elements for Menu */
-        .menu-controls {
-            margin-top: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(20, 20, 20, 0.8);
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: 1px solid #222;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        
-        .toggle-container:hover {
-            border-color: #555;
-        }
-
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: #eeeeee;
-            cursor: pointer;
-        }
-
-        .play-btn {
-            background: #eeeeee;
-            color: #050505;
-            border: none;
-            padding: 14px 40px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 18px;
-            font-weight: 700;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
-        }
-
+        .menu-controls { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .toggle-container { display: flex; align-items: center; gap: 12px; background: rgba(20, 20, 20, 0.8); padding: 12px 24px; border-radius: 8px; border: 1px solid #222; cursor: pointer; transition: border-color 0.2s; }
+        .toggle-container:hover { border-color: #555; }
+        input[type="checkbox"] { width: 20px; height: 20px; accent-color: #eeeeee; cursor: pointer; }
+        .play-btn { background: #eeeeee; color: #050505; border: none; padding: 14px 40px; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: transform 0.1s, background 0.2s; }
         .play-btn:hover { background: #ffffff; transform: scale(1.05); }
-        .play-btn:active { transform: scale(0.95); }
 
+        /* --- SETTINGS PANEL & BUTTON --- */
+        #settingsBtn {
+            position: absolute; top: 24px; right: 24px;
+            width: 32px; height: 32px; cursor: pointer; z-index: 30;
+            fill: #666; transition: fill 0.2s, transform 0.3s;
+            pointer-events: auto;
+        }
+        #settingsBtn:hover { fill: #eee; transform: rotate(45deg); }
+        
+        #settingsPanel {
+            position: absolute; top: 0; right: -360px;
+            width: 320px; height: 100vh;
+            background: rgba(10, 10, 10, 0.98);
+            border-left: 1px solid #222;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+            z-index: 25; padding: 40px 20px; box-sizing: border-box;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; flex-direction: column; gap: 24px;
+        }
+        #settingsPanel.open { right: 0; }
+        #settingsPanel h2 { font-size: 20px; font-weight: 400; margin: 0; letter-spacing: -0.5px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        
+        .setting-group { display: flex; flex-direction: column; gap: 8px; }
+        .setting-group label { font-size: 13px; color: #666; text-transform: lowercase; }
+        
+        /* Keybind inputs */
+        .keybind-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .key-input { background: #151515; border: 1px solid #333; border-radius: 4px; color: #fff; text-align: center; padding: 8px 0; font-family: inherit; font-size: 14px; cursor: pointer; transition: border-color 0.2s; text-transform: uppercase; }
+        .key-input:focus { border-color: #eee; outline: none; background: #222; }
+        
+        /* Dropdowns */
+        select { background: #151515; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; font-family: inherit; cursor: pointer; outline: none; }
+        select:focus { border-color: #eee; }
+
+        /* Sound Dropzone */
+        #soundDropzone {
+            border: 1px dashed #444; background: #111;
+            padding: 20px; border-radius: 6px; text-align: center;
+            font-size: 13px; color: #555; cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        #soundDropzone.dragover { border-color: #eee; background: #1a1a1a; color: #aaa; }
+        #soundDropzone.loaded { border-color: #44aa44; color: #44aa44; border-style: solid; }
     </style>
 </head>
 <body>
 
+    <!-- Settings Cog Icon -->
+    <svg id="settingsBtn" viewBox="0 0 24 24">
+        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C13.46 2.16 13.24 2 13 2h-4c-.24 0-.46.16-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.26.25.42.49.42h4c.24 0 .46-.16.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+    </svg>
+
+    <!-- Slide-out Settings Menu -->
+    <div id="settingsPanel">
+        <h2>settings.</h2>
+        
+        <div class="setting-group">
+            <label>keybinds</label>
+            <div class="keybind-grid">
+                <input type="text" class="key-input" id="key0" readonly>
+                <input type="text" class="key-input" id="key1" readonly>
+                <input type="text" class="key-input" id="key2" readonly>
+                <input type="text" class="key-input" id="key3" readonly>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label>note style</label>
+            <select id="noteStyleSelect">
+                <option value="circle">circles</option>
+                <option value="bar">bars</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label>color theme</label>
+            <select id="colorThemeSelect">
+                <option value="minimal">minimal (light/dark gray)</option>
+                <option value="emerald">emerald vibrant</option>
+                <option value="ruby">ruby crimson</option>
+                <option value="neon">neon cyber</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label>custom hit sound</label>
+            <div id="soundDropzone">drop .mp3/.wav here to change hit sound</div>
+        </div>
+    </div>
+
     <div id="drop-zone">
         <h1>rhythm.</h1>
         <p>drop an mp3 or wav here.</p>
-        <p class="hint">controls: a, s, k, l | pause: p | quit: esc</p>
+        <div class="menu-controls">
+            <label class="toggle-container" for="holdToggle">
+                <input type="checkbox" id="holdToggle" checked>
+                <span style="font-size: 16px; color: #ddd;">enable hold notes</span>
+            </label>
+            <button class="play-btn" id="startBtn" style="display:none;">play</button>
+        </div>
+        <p class="hint">controls: customizable inside settings | pause: p | quit: esc</p>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -113,19 +165,31 @@
         canvas.height = GAME_HEIGHT * dpr;
         ctx.scale(dpr, dpr);
 
-        // --- GAME CONFIGURATION ---
-        const dropZone = document.getElementById('drop-zone');
+        // --- CUSTOMIZABLE USER CONFIG ---
         const config = {
-            keys: ['a', 's', 'k', 'l'], lanes: 4,
-            laneWidth: 140, noteRadius: 48,
-            hitPosition: 680, scrollSpeed: 1100,
+            keys: ['a', 's', 'k', 'l'], 
+            lanes: 4,
+            laneWidth: 140, 
+            noteRadius: 48,
+            hitPosition: 680, 
+            scrollSpeed: 1100,
             hitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
             bpm: 120, 
-            enableHolds: true // Default state
+            enableHolds: true,
+            style: 'circle', // 'circle' or 'bar'
+            theme: 'minimal' // 'minimal', 'emerald', 'ruby', 'neon'
+        };
+
+        // Palette maps
+        const themes = {
+            minimal: { side: '#999999', mid: '#ffffff', activeTrail: 'rgba(255,255,255,0.15)' },
+            emerald: { side: '#00b4d8', mid: '#00f5d4', activeTrail: 'rgba(0,245,212,0.15)' },
+            ruby:    { side: '#f72585', mid: '#7209b7', activeTrail: 'rgba(114,9,183,0.15)' },
+            neon:    { side: '#ff007f', mid: '#39ff14', activeTrail: 'rgba(57,255,20,0.15)' }
         };
 
         // --- GAME STATE ---
-        let audioCtx, audioSource, audioBuffer;
+        let audioCtx, audioSource, audioBuffer, customHitBuffer;
         let gameStartTime = 0;
         let isPlaying = false;
         let isPaused = false;
@@ -139,16 +203,76 @@
         let stats = { score: 0, combo: 0, maxCombo: 0, perfects: 0, goods: 0, misses: 0, total: 0 };
         const keyState = { 0: false, 1: false, 2: false, 3: false };
 
+        // --- SETTINGS UI INTERACTION ---
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const soundDropzone = document.getElementById('soundDropzone');
+
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsPanel.classList.toggle('open');
+        });
+        document.addEventListener('click', (e) => {
+            if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+                settingsPanel.classList.remove('open');
+            }
+        });
+
+        // Initialize Keybind boxes
+        function updateKeybindUI() {
+            for(let i=0; i<4; i++) {
+                document.getElementById(`key${i}`).value = config.keys[i];
+            }
+        }
+        updateKeybindUI();
+
+        // Listen for changing keybinds
+        for(let i=0; i<4; i++) {
+            const input = document.getElementById(`key${i}`);
+            input.addEventListener('keydown', (e) => {
+                e.preventDefault();
+                const pressedKey = e.key.toLowerCase();
+                if (pressedKey.length === 1 || pressedKey === 'arrowleft' || pressedKey === 'arrowright' || pressedKey === 'arrowup' || pressedKey === 'arrowdown') {
+                    config.keys[i] = pressedKey;
+                    input.value = pressedKey;
+                }
+            });
+        }
+
+        // Style and theme dropdown change hooks
+        document.getElementById('noteStyleSelect').addEventListener('change', (e) => config.style = e.target.value);
+        document.getElementById('colorThemeSelect').addEventListener('change', (e) => config.theme = e.target.value);
+
+        // Custom Hit Sound drop logic
+        soundDropzone.addEventListener('dragover', (e) => { e.preventDefault(); soundDropzone.classList.add('dragover'); });
+        soundDropzone.addEventListener('dragleave', () => soundDropzone.classList.remove('dragover'));
+        soundDropzone.addEventListener('drop', async (e) => {
+            e.preventDefault(); e.stopPropagation();
+            soundDropzone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('audio/')) {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const reader = new FileReader();
+                reader.onload = async function(evt) {
+                    try {
+                        customHitBuffer = await audioCtx.decodeAudioData(evt.target.result);
+                        soundDropzone.textContent = "sound saved!";
+                        soundDropzone.classList.add('loaded');
+                    } catch(err) { alert("failed to process sample."); }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
         // --- INPUT HANDLING ---
         window.addEventListener('keydown', async (e) => {
-            if (e.key === 'Escape' && isPlaying) {
-                endGame("game stopped."); return;
-            }
-            if (e.key.toLowerCase() === 'p' && isPlaying) {
-                togglePause(); return;
-            }
+            if (e.key === 'Escape' && isPlaying) { endGame("game stopped."); return; }
+            if (e.key.toLowerCase() === 'p' && isPlaying) { togglePause(); return; }
 
             if (e.repeat || isPaused || !isPlaying) return;
+            // Prevent gaming registration if currently remapping keys inside inputs
+            if (document.activeElement.classList.contains('key-input')) return;
+
             const lane = config.keys.indexOf(e.key.toLowerCase());
             if (lane !== -1) {
                 keyState[lane] = true;
@@ -165,28 +289,26 @@
 
         async function togglePause() {
             isPaused = !isPaused;
-            if (isPaused) {
-                await audioCtx.suspend();
-            } else {
-                await audioCtx.resume();
-            }
+            if (isPaused) await audioCtx.suspend();
+            else await audioCtx.resume();
         }
 
-        // --- DRAG & DROP LOGIC ---
+        // --- DRAG & DROP TRACK LOGIC ---
+        const dropZone = document.getElementById('drop-zone');
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault(); dropZone.classList.remove('dragover');
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('audio/')) {
-                dropZone.innerHTML = "<h1>loading...</h1><p>analyzing audio frequencies.</p>";
+                dropZone.querySelector('h1').textContent = "loading...";
+                dropZone.querySelector('p').textContent = "analyzing audio frequencies.";
                 loadAudioFile(file);
             } else {
                 resetMenu("please drop a valid audio file (.mp3, .wav)");
             }
         });
 
-        // --- AUDIO & MENU GENERATION ---
         async function loadAudioFile(file) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') await audioCtx.resume();
@@ -194,32 +316,15 @@
             reader.onload = async function(e) {
                 try {
                     audioBuffer = await audioCtx.decodeAudioData(e.target.result);
-                    
-                    // Render the Ready Menu with the Hold Note Toggle
-                    dropZone.innerHTML = `
-                        <h1>ready.</h1>
-                        <p>audio processed successfully.</p>
-                        
-                        <div class="menu-controls">
-                            <label class="toggle-container" for="holdToggle">
-                                <input type="checkbox" id="holdToggle" checked>
-                                <span style="font-size: 16px; color: #ddd;">enable hold notes</span>
-                            </label>
-                            
-                            <button class="play-btn" id="startBtn">play</button>
-                        </div>
-                        
-                        <p class="hint">controls: a, s, k, l | pause: p | quit: esc</p>
-                    `;
-                    
-                    document.getElementById('startBtn').addEventListener('click', () => {
+                    dropZone.querySelector('h1').textContent = "ready.";
+                    dropZone.querySelector('p').textContent = "audio processed successfully.";
+                    const startBtn = document.getElementById('startBtn');
+                    startBtn.style.display = "block";
+                    startBtn.onclick = () => {
                         config.enableHolds = document.getElementById('holdToggle').checked;
                         startGame();
-                    });
-
-                } catch (err) {
-                    resetMenu("error decoding audio.");
-                }
+                    };
+                } catch (err) { resetMenu("error decoding audio."); }
             };
             reader.readAsArrayBuffer(file);
         }
@@ -239,7 +344,6 @@
             gameStartTime = audioCtx.currentTime + 1.5;
             audioSource.start(gameStartTime);
             isPlaying = true;
-            
             gameLoop();
         }
 
@@ -251,13 +355,13 @@
                 try { audioSource.stop(); } catch(e) {}
                 audioSource.disconnect();
             }
-            const acc = getAccuracy();
-            resetMenu(`${message}<br><br>score: ${stats.score} | acc: ${acc} | max combo: ${stats.maxCombo}<br><br>drop another file to play again.`);
+            resetMenu(`${message}<br><br>score: ${stats.score} | acc: ${getAccuracy()} | max combo: ${stats.maxCombo}<br><br>drop another file to play again.`);
         }
 
         function resetMenu(msg) {
+            document.getElementById('startBtn').style.display = "none";
             dropZone.classList.remove('hidden');
-            dropZone.innerHTML = `<h1>rhythm.</h1><p>${msg}</p><p class="hint">controls: a, s, k, l | pause: p | quit: esc</p>`;
+            dropZone.innerHTML = `<h1>rhythm.</h1><p>${msg}</p><div class="menu-controls"><label class="toggle-container" for="holdToggle"><input type="checkbox" id="holdToggle" checked><span style="font-size: 16px; color: #ddd;">enable hold notes</span></label><button class="play-btn" id="startBtn" style="display:none;">play</button></div><p class="hint">controls: customizable inside settings | pause: p | quit: esc</p>`;
         }
 
         // --- SMART AUDIO ANALYSIS GENERATOR ---
@@ -265,15 +369,13 @@
             notes = [];
             const channelData = buffer.getChannelData(0);
             const sampleRate = buffer.sampleRate;
-            
             const chunkSize = Math.floor(sampleRate * 0.1); 
             let energies = [];
             
             for (let i = 0; i < channelData.length; i += chunkSize) {
                 let sum = 0, count = 0;
                 for (let j = 0; j < chunkSize && i + j < channelData.length; j += 10) { 
-                    sum += Math.abs(channelData[i + j]);
-                    count++;
+                    sum += Math.abs(channelData[i + j]); count++;
                 }
                 energies.push(sum / count);
             }
@@ -281,14 +383,11 @@
             const avgEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
             const beat = 60 / config.bpm;
             let time = 1.5;
-            
             let laneBusyUntil = [0, 0, 0, 0];
 
             function getFreeLane(atTime) {
                 let freeLanes = [];
-                for (let i = 0; i < 4; i++) {
-                    if (laneBusyUntil[i] <= atTime) freeLanes.push(i);
-                }
+                for (let i = 0; i < 4; i++) { if (laneBusyUntil[i] <= atTime) freeLanes.push(i); }
                 if (freeLanes.length === 0) return -1;
                 return freeLanes[Math.floor(Math.random() * freeLanes.length)];
             }
@@ -298,9 +397,7 @@
                 const energy = energies[chunkIdx] || 0;
                 
                 if (energy > avgEnergy * 1.6) {
-                    // HIGH ENERGY SECTION
                     if (Math.random() > 0.6 || !config.enableHolds) {
-                        // CHORDS (Jumps)
                         let l1 = getFreeLane(time);
                         if (l1 !== -1) {
                             laneBusyUntil[l1] = time + 0.1; 
@@ -309,47 +406,30 @@
                                 laneBusyUntil[l2] = time + 0.1;
                                 notes.push(createNote(time, l1, 0));
                                 notes.push(createNote(time, l2, 0));
-                            } else {
-                                notes.push(createNote(time, l1, 0)); 
-                            }
+                            } else { notes.push(createNote(time, l1, 0)); }
                         }
                     } else {
-                        // HOLD NOTES (Only if enabled)
                         let lane = getFreeLane(time);
                         if (lane !== -1) {
                             const holdLengths = [0.5, 1.0, 1.5, 2.0];
-                            const holdMult = holdLengths[Math.floor(Math.random() * holdLengths.length)];
-                            const holdDuration = beat * holdMult;
-                            
+                            const holdDuration = beat * holdLengths[Math.floor(Math.random() * holdLengths.length)];
                             laneBusyUntil[lane] = time + holdDuration + 0.1; 
                             notes.push(createNote(time, lane, holdDuration));
                         }
                     }
                     time += beat / 2; 
                 } else if (energy > avgEnergy * 0.85) {
-                    // MEDIUM ENERGY (Streams)
                     let lane = getFreeLane(time);
-                    if (lane !== -1) {
-                        laneBusyUntil[lane] = time + 0.1;
-                        notes.push(createNote(time, lane, 0));
-                    }
+                    if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
                     time += beat / 2; 
                 } else if (energy > avgEnergy * 0.4) {
-                    // LOW ENERGY (Beats)
                     let lane = getFreeLane(time);
-                    if (lane !== -1) {
-                        laneBusyUntil[lane] = time + 0.1;
-                        notes.push(createNote(time, lane, 0));
-                    }
+                    if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
                     time += beat; 
                 } else {
-                    // QUIET (Sparse)
                     if (Math.random() > 0.5) {
                         let lane = getFreeLane(time);
-                        if (lane !== -1) {
-                            laneBusyUntil[lane] = time + 0.1;
-                            notes.push(createNote(time, lane, 0));
-                        }
+                        if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
                     }
                     time += beat * 2; 
                 }
@@ -357,14 +437,47 @@
         }
 
         function createNote(time, lane, duration) {
-            return { 
-                time, lane, duration, 
-                hit: false, missed: false, 
-                completed: false, isHolding: false, headHit: false 
-            };
+            return { time, lane, duration, hit: false, missed: false, completed: false, isHolding: false, headHit: false };
         }
 
-        // --- GAME MECHANICS ---
+        // --- SOUND EFFECTS ---
+        function playHitSound() {
+            if (!audioCtx) return;
+            const source = audioCtx.createBufferSource();
+            const gain = audioCtx.createGain();
+            source.connect(gain); gain.connect(audioCtx.destination);
+
+            if (customHitBuffer) {
+                source.buffer = customHitBuffer;
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            } else {
+                // Procedural synth fall-back
+                const osc = audioCtx.createOscillator();
+                osc.connect(gain);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                return;
+            }
+            source.start();
+        }
+
+        function playMissSound() {
+            if (!audioCtx || customHitBuffer) return; // Silent if custom pack loaded or missing context
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // --- GAME LOGIC ENGINE ---
         function getAccuracy() {
             if (stats.total === 0) return "100.00%";
             return (((stats.perfects + (stats.goods * 0.5)) / stats.total) * 100).toFixed(2) + "%";
@@ -377,14 +490,11 @@
         function registerHit(judgment) {
             stats.total++;
             if (judgment === "perfect") {
-                stats.combo++; stats.perfects++; stats.score += 300;
-                showFeedback("perfect", "#ffffff");
+                stats.combo++; stats.perfects++; stats.score += 300; playHitSound(); showFeedback("perfect", "#ffffff");
             } else if (judgment === "good") {
-                stats.combo++; stats.goods++; stats.score += 100;
-                showFeedback("good", "#888888");
+                stats.combo++; stats.goods++; stats.score += 100; playHitSound(); showFeedback("good", "#888888");
             } else {
-                stats.combo = 0; stats.misses++;
-                showFeedback("miss", "#ff3333");
+                stats.combo = 0; stats.misses++; playMissSound(); showFeedback("miss", "#ff3333");
             }
             if (stats.combo > stats.maxCombo) stats.maxCombo = stats.combo;
         }
@@ -397,40 +507,30 @@
             const timeDiff = Math.abs(targetNote.time - currentAudioTime);
 
             if (timeDiff <= config.hitWindows.miss) {
-                let judgment = timeDiff <= config.hitWindows.perfect ? "perfect" : 
-                               timeDiff <= config.hitWindows.good ? "good" : "miss";
-                
+                let judgment = timeDiff <= config.hitWindows.perfect ? "perfect" : timeDiff <= config.hitWindows.good ? "good" : "miss";
                 if (judgment !== "miss") {
-                    targetNote.headHit = true;
-                    registerHit(judgment); 
-                    
-                    if (targetNote.duration > 0) {
-                        targetNote.isHolding = true; 
-                    } else {
-                        targetNote.completed = true;
-                        targetNote.hit = true;
-                    }
+                    targetNote.headHit = true; registerHit(judgment); 
+                    if (targetNote.duration > 0) targetNote.isHolding = true; 
+                    else { targetNote.completed = true; targetNote.hit = true; }
                 } else {
-                    targetNote.missed = true;
-                    targetNote.completed = true;
-                    registerHit("miss");
+                    targetNote.missed = true; targetNote.completed = true; registerHit("miss");
                 }
             }
         }
 
-        function showFeedback(text, color) {
-            feedbackText = { text, color, alpha: 1.0, scale: 1.2, yOffset: 0 };
-        }
+        function showFeedback(text, color) { feedbackText = { text, color, alpha: 1.0, scale: 1.2, yOffset: 0 }; }
 
-        // --- RENDER LOOP ---
+        // --- CORE DRAW LOOP ---
         function gameLoop() {
             if (!isPlaying) return;
             animationFrameId = requestAnimationFrame(gameLoop);
             
             const currentAudioTime = audioCtx.currentTime - gameStartTime;
             ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            
+            const activePalette = themes[config.theme];
 
-            // 1. Draw Lanes & Receptors
+            // 1. Draw Lanes & Receptor Beds
             for (let i = 0; i < config.lanes; i++) {
                 const x = i * config.laneWidth;
                 const centerX = x + config.laneWidth / 2;
@@ -446,10 +546,17 @@
                     activeFlashes[i] -= 0.05; 
                 }
 
-                ctx.beginPath();
-                ctx.arc(centerX, config.hitPosition, config.noteRadius, 0, Math.PI * 2);
-                ctx.fillStyle = keyState[i] ? '#222' : '#0a0a0a'; ctx.fill();
-                ctx.lineWidth = 3; ctx.strokeStyle = keyState[i] ? '#aaa' : '#333'; ctx.stroke();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = keyState[i] ? '#aaa' : '#333';
+                ctx.fillStyle = keyState[i] ? '#222' : '#0a0a0a';
+
+                if (config.style === 'circle') {
+                    ctx.beginPath(); ctx.arc(centerX, config.hitPosition, config.noteRadius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                } else {
+                    // Rectangular Bar Receptors
+                    ctx.fillRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32);
+                    ctx.strokeRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32);
+                }
             }
 
             if (!isPaused) {
@@ -463,30 +570,21 @@
                 }
             }
 
-            // 3. Process & Draw Notes
+            // 3. Process & Render Chart Notes
             for (let note of notes) {
                 if (note.completed) continue;
-
                 const timeUntilHit = note.time - currentAudioTime;
                 
                 if (note.isHolding && !isPaused) {
                     if (!keyState[note.lane]) {
-                        note.isHolding = false;
-                        note.completed = true;
-                        note.missed = true;
-                        registerHit("miss"); 
+                        note.isHolding = false; note.completed = true; note.missed = true; registerHit("miss"); 
                     } else if (currentAudioTime >= note.time + note.duration) {
-                        note.isHolding = false;
-                        note.completed = true;
-                        note.hit = true;
-                        registerHit("perfect"); 
+                        note.isHolding = false; note.completed = true; note.hit = true; registerHit("perfect"); 
                     }
                 }
 
                 if (timeUntilHit < -config.hitWindows.miss && !note.headHit && !note.missed) {
-                    note.missed = true;
-                    note.completed = true;
-                    registerHit("miss");
+                    note.missed = true; note.completed = true; registerHit("miss");
                 }
 
                 if (note.missed) continue;
@@ -498,64 +596,63 @@
                 if (note.isHolding) yHead = config.hitPosition;
 
                 if (yTail < GAME_HEIGHT + 200 && yHead > -500) {
-                    const centerX = (note.lane * config.laneWidth) + (config.laneWidth / 2);
-                    const noteColor = (note.lane === 0 || note.lane === 3) ? '#999999' : '#ffffff';
+                    const xPos = note.lane * config.laneWidth;
+                    const centerX = xPos + config.laneWidth / 2;
+                    const c = (note.lane === 0 || note.lane === 3) ? activePalette.side : activePalette.mid;
                     
+                    // Draw Hold Body Trail
                     if (note.duration > 0) {
-                        ctx.fillStyle = (note.lane === 0 || note.lane === 3) ? 'rgba(153, 153, 153, 0.2)' : 'rgba(255, 255, 255, 0.2)';
+                        ctx.fillStyle = activePalette.activeTrail;
                         const bodyHeight = yHead - yTail;
                         if (bodyHeight > 0) {
-                            ctx.fillRect(centerX - config.noteRadius, yTail, config.noteRadius * 2, bodyHeight);
+                            if (config.style === 'circle') {
+                                ctx.fillRect(centerX - config.noteRadius, yTail, config.noteRadius * 2, bodyHeight);
+                                ctx.beginPath(); ctx.arc(centerX, yTail, config.noteRadius, 0, Math.PI * 2); ctx.fill();
+                            } else {
+                                ctx.fillRect(xPos + 10, yTail, config.laneWidth - 20, bodyHeight);
+                            }
                         }
-                        ctx.beginPath(); ctx.arc(centerX, yTail, config.noteRadius, 0, Math.PI * 2); ctx.fill();
                     }
 
-                    ctx.beginPath();
-                    ctx.arc(centerX, yHead, config.noteRadius, 0, Math.PI * 2);
-                    ctx.fillStyle = noteColor; ctx.fill();
+                    // Draw Primary Note Head
+                    ctx.fillStyle = c;
+                    if (config.style === 'circle') {
+                        ctx.beginPath(); ctx.arc(centerX, yHead, config.noteRadius, 0, Math.PI * 2); ctx.fill();
+                    } else {
+                        ctx.fillRect(xPos + 10, yHead - 16, config.laneWidth - 20, 32);
+                    }
                 }
             }
 
-            // 4. Draw UI
+            // 4. Interface Overlays
             ctx.fillStyle = '#666'; ctx.font = '400 16px "DM Sans"'; ctx.textAlign = 'left';
-            ctx.fillText(`score: ${stats.score}`, 20, 30);
-            ctx.textAlign = 'center';
-            ctx.fillText(`acc: ${getAccuracy()}`, GAME_WIDTH / 2, 30);
-            ctx.textAlign = 'right';
-            ctx.fillStyle = stats.misses > 0 ? '#ff5555' : '#666';
-            ctx.fillText(`miss: ${stats.misses}`, GAME_WIDTH - 20, 30);
+            ctx.fillText(`score: ${stats.score}`, 20, 40);
+            ctx.textAlign = 'center'; ctx.fillText(`acc: ${getAccuracy()}`, GAME_WIDTH / 2, 40);
+            ctx.textAlign = 'right'; ctx.fillStyle = stats.misses > 0 ? '#ff5555' : '#666';
+            ctx.fillText(`miss: ${stats.misses}`, GAME_WIDTH - 20, 40);
 
             if (feedbackText.alpha > 0 && !isPaused) {
-                ctx.save();
-                feedbackText.yOffset -= 1;
+                ctx.save(); feedbackText.yOffset -= 1;
                 ctx.translate(GAME_WIDTH / 2, config.hitPosition - 160 + feedbackText.yOffset);
                 ctx.scale(feedbackText.scale, feedbackText.scale);
                 ctx.fillStyle = feedbackText.color; ctx.globalAlpha = feedbackText.alpha;
                 ctx.font = '400 28px "DM Sans"'; ctx.textAlign = 'center';
-                ctx.fillText(feedbackText.text, 0, 0);
-                ctx.restore();
-                feedbackText.alpha -= 0.02;
-                if (feedbackText.scale > 1.0) feedbackText.scale -= 0.01;
+                ctx.fillText(feedbackText.text, 0, 0); ctx.restore();
+                feedbackText.alpha -= 0.02; if (feedbackText.scale > 1.0) feedbackText.scale -= 0.01;
             }
 
             if (stats.combo > 5) {
                 const comboScale = isPaused ? 1 : 1 + (Math.sin(currentAudioTime * Math.PI * 8) * 0.05);
-                ctx.save();
-                ctx.translate(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80);
-                ctx.scale(comboScale, comboScale);
-                ctx.fillStyle = '#eeeeee'; ctx.font = '700 48px "DM Sans"';
-                ctx.textAlign = 'center'; ctx.fillText(`${stats.combo}`, 0, 0);
-                ctx.font = '400 16px "DM Sans"'; ctx.fillStyle = '#666';
-                ctx.fillText(`combo`, 0, 25);
+                ctx.save(); ctx.translate(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80); ctx.scale(comboScale, comboScale);
+                ctx.fillStyle = '#eeeeee'; ctx.font = '700 48px "DM Sans"'; ctx.textAlign = 'center';
+                ctx.fillText(`${stats.combo}`, 0, 0);
+                ctx.font = '400 16px "DM Sans"'; ctx.fillStyle = '#666'; ctx.fillText("combo", 0, 25);
                 ctx.restore();
             }
 
             if (isPaused) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '700 40px "DM Sans"';
-                ctx.textAlign = 'center';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                ctx.fillStyle = '#ffffff'; ctx.font = '700 40px "DM Sans"'; ctx.textAlign = 'center';
                 ctx.fillText('PAUSED', GAME_WIDTH / 2, GAME_HEIGHT / 2);
             }
         }
