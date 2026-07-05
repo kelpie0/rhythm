@@ -55,14 +55,15 @@
         #settingsBtn:hover { fill: #eee; transform: rotate(45deg); }
         
         #settingsPanel {
-            position: absolute; top: 0; right: -360px;
-            width: 320px; height: 100vh;
+            position: absolute; top: 0; right: -380px; /* Widened for safety */
+            width: 380px; height: 100vh;
             background: rgba(10, 10, 10, 0.98);
             border-left: 1px solid #222;
             box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-            z-index: 25; padding: 40px 20px; box-sizing: border-box;
+            z-index: 25; padding: 40px 24px; box-sizing: border-box;
             transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex; flex-direction: column; gap: 24px;
+            overflow-y: auto;
         }
         #settingsPanel.open { right: 0; }
         #settingsPanel h2 { font-size: 20px; font-weight: 400; margin: 0; letter-spacing: -0.5px; border-bottom: 1px solid #222; padding-bottom: 10px; }
@@ -71,13 +72,20 @@
         .setting-group label { font-size: 13px; color: #666; text-transform: lowercase; }
         
         /* Keybind inputs */
-        .keybind-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .key-input { background: #151515; border: 1px solid #333; border-radius: 4px; color: #fff; text-align: center; padding: 8px 0; font-family: inherit; font-size: 14px; cursor: pointer; transition: border-color 0.2s; text-transform: uppercase; }
+        .keybind-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; box-sizing: border-box; }
+        .key-input { width: 100%; box-sizing: border-box; background: #151515; border: 1px solid #333; border-radius: 4px; color: #fff; text-align: center; padding: 8px 0; font-family: inherit; font-size: 14px; cursor: pointer; transition: border-color 0.2s; text-transform: uppercase; }
         .key-input:focus { border-color: #eee; outline: none; background: #222; }
         
         /* Dropdowns */
-        select { background: #151515; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; font-family: inherit; cursor: pointer; outline: none; }
+        select { background: #151515; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; font-family: inherit; cursor: pointer; outline: none; width: 100%; box-sizing: border-box;}
         select:focus { border-color: #eee; }
+
+        /* Preview Container */
+        .preview-container {
+            display: flex; justify-content: center; align-items: center;
+            background: #111; padding: 20px; border-radius: 8px;
+            border: 1px solid #333; height: 80px;
+        }
 
         /* Sound Dropzone */
         #soundDropzone {
@@ -92,12 +100,10 @@
 </head>
 <body>
 
-    <!-- Settings Cog Icon -->
     <svg id="settingsBtn" viewBox="0 0 24 24">
-        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C13.46 2.16 13.24 2 13 2h-4c-.24 0-.46.16-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.26.25.42.49.42h4c.24 0 .46-.16.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
     </svg>
 
-    <!-- Slide-out Settings Menu -->
     <div id="settingsPanel">
         <h2>settings.</h2>
         
@@ -108,6 +114,13 @@
                 <input type="text" class="key-input" id="key1" readonly>
                 <input type="text" class="key-input" id="key2" readonly>
                 <input type="text" class="key-input" id="key3" readonly>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label>note preview</label>
+            <div class="preview-container">
+                <canvas id="previewCanvas" width="160" height="80"></canvas>
             </div>
         </div>
 
@@ -176,11 +189,10 @@
             hitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
             bpm: 120, 
             enableHolds: true,
-            style: 'circle', // 'circle' or 'bar'
-            theme: 'minimal' // 'minimal', 'emerald', 'ruby', 'neon'
+            style: 'circle', 
+            theme: 'minimal' 
         };
 
-        // Palette maps
         const themes = {
             minimal: { side: '#999999', mid: '#ffffff', activeTrail: 'rgba(255,255,255,0.15)' },
             emerald: { side: '#00b4d8', mid: '#00f5d4', activeTrail: 'rgba(0,245,212,0.15)' },
@@ -190,6 +202,7 @@
 
         // --- GAME STATE ---
         let audioCtx, audioSource, audioBuffer, customHitBuffer;
+        let musicGainNode; // To control music volume separate from SFX
         let gameStartTime = 0;
         let isPlaying = false;
         let isPaused = false;
@@ -207,10 +220,13 @@
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsPanel = document.getElementById('settingsPanel');
         const soundDropzone = document.getElementById('soundDropzone');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const pCtx = previewCanvas.getContext('2d');
 
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             settingsPanel.classList.toggle('open');
+            drawPreview(); // Ensure it's drawn when opened
         });
         document.addEventListener('click', (e) => {
             if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
@@ -226,22 +242,52 @@
         }
         updateKeybindUI();
 
-        // Listen for changing keybinds
         for(let i=0; i<4; i++) {
             const input = document.getElementById(`key${i}`);
             input.addEventListener('keydown', (e) => {
                 e.preventDefault();
                 const pressedKey = e.key.toLowerCase();
-                if (pressedKey.length === 1 || pressedKey === 'arrowleft' || pressedKey === 'arrowright' || pressedKey === 'arrowup' || pressedKey === 'arrowdown') {
-                    config.keys[i] = pressedKey;
-                    input.value = pressedKey;
+                if (pressedKey.length === 1 || pressedKey.startsWith('arrow')) {
+                    config.keys[i] = pressedKey.replace('arrow', ''); // simplify display
+                    input.value = config.keys[i];
                 }
             });
         }
 
-        // Style and theme dropdown change hooks
-        document.getElementById('noteStyleSelect').addEventListener('change', (e) => config.style = e.target.value);
-        document.getElementById('colorThemeSelect').addEventListener('change', (e) => config.theme = e.target.value);
+        // Live Preview Renderer
+        function drawPreview() {
+            pCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            const activePalette = themes[config.theme];
+            
+            // Draw a fake "Side" note and "Mid" note
+            const notes = [
+                { x: 40, color: activePalette.side },
+                { x: 120, color: activePalette.mid }
+            ];
+
+            notes.forEach(n => {
+                pCtx.fillStyle = n.color;
+                if (config.style === 'circle') {
+                    pCtx.beginPath();
+                    pCtx.arc(n.x, 40, 24, 0, Math.PI * 2);
+                    pCtx.fill();
+                } else {
+                    pCtx.fillRect(n.x - 30, 25, 60, 20);
+                }
+            });
+        }
+
+        document.getElementById('noteStyleSelect').addEventListener('change', (e) => {
+            config.style = e.target.value;
+            drawPreview();
+        });
+        document.getElementById('colorThemeSelect').addEventListener('change', (e) => {
+            config.theme = e.target.value;
+            drawPreview();
+        });
+        
+        // Initial Preview Draw
+        drawPreview();
 
         // Custom Hit Sound drop logic
         soundDropzone.addEventListener('dragover', (e) => { e.preventDefault(); soundDropzone.classList.add('dragover'); });
@@ -270,10 +316,11 @@
             if (e.key.toLowerCase() === 'p' && isPlaying) { togglePause(); return; }
 
             if (e.repeat || isPaused || !isPlaying) return;
-            // Prevent gaming registration if currently remapping keys inside inputs
-            if (document.activeElement.classList.contains('key-input')) return;
+            if (document.activeElement.classList.contains('key-input')) return; // Block game input if typing in settings
 
-            const lane = config.keys.indexOf(e.key.toLowerCase());
+            const pressedKey = e.key.toLowerCase().replace('arrow', '');
+            const lane = config.keys.indexOf(pressedKey);
+            
             if (lane !== -1) {
                 keyState[lane] = true;
                 activeFlashes[lane] = 1.0;
@@ -283,7 +330,8 @@
         });
 
         window.addEventListener('keyup', (e) => {
-            const lane = config.keys.indexOf(e.key.toLowerCase());
+            const pressedKey = e.key.toLowerCase().replace('arrow', '');
+            const lane = config.keys.indexOf(pressedKey);
             if (lane !== -1) keyState[lane] = false;
         });
 
@@ -338,7 +386,14 @@
             
             audioSource = audioCtx.createBufferSource();
             audioSource.buffer = audioBuffer;
-            audioSource.connect(audioCtx.destination);
+            
+            // DUCK THE MUSIC VOLUME SO HITS POP
+            musicGainNode = audioCtx.createGain();
+            musicGainNode.gain.value = 0.4; // 40% volume for the backing track
+            
+            audioSource.connect(musicGainNode);
+            musicGainNode.connect(audioCtx.destination);
+            
             audioSource.onended = () => { if (isPlaying) endGame("track finished."); };
             
             gameStartTime = audioCtx.currentTime + 1.5;
@@ -355,6 +410,7 @@
                 try { audioSource.stop(); } catch(e) {}
                 audioSource.disconnect();
             }
+            if (musicGainNode) musicGainNode.disconnect();
             resetMenu(`${message}<br><br>score: ${stats.score} | acc: ${getAccuracy()} | max combo: ${stats.maxCombo}<br><br>drop another file to play again.`);
         }
 
@@ -440,7 +496,7 @@
             return { time, lane, duration, hit: false, missed: false, completed: false, isHolding: false, headHit: false };
         }
 
-        // --- SOUND EFFECTS ---
+        // --- SOUND EFFECTS (MIXED LOUDER) ---
         function playHitSound() {
             if (!audioCtx) return;
             const source = audioCtx.createBufferSource();
@@ -449,30 +505,29 @@
 
             if (customHitBuffer) {
                 source.buffer = customHitBuffer;
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.setValueAtTime(1.0, audioCtx.currentTime); // Boosted custom sound
+                source.start();
             } else {
-                // Procedural synth fall-back
+                // Boosted Procedural synth
                 const osc = audioCtx.createOscillator();
                 osc.connect(gain);
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(600, audioCtx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime); // Much louder than previous 0.12
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-                return;
             }
-            source.start();
         }
 
         function playMissSound() {
-            if (!audioCtx || customHitBuffer) return; // Silent if custom pack loaded or missing context
+            if (!audioCtx || customHitBuffer) return; 
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
             osc.start(); osc.stop(audioCtx.currentTime + 0.15);
         }
@@ -553,7 +608,6 @@
                 if (config.style === 'circle') {
                     ctx.beginPath(); ctx.arc(centerX, config.hitPosition, config.noteRadius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
                 } else {
-                    // Rectangular Bar Receptors
                     ctx.fillRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32);
                     ctx.strokeRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32);
                 }
