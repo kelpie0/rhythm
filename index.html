@@ -21,6 +21,7 @@
             border-left: 1px solid #1a1a1a;
             border-right: 1px solid #1a1a1a;
             box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            position: relative;
         }
         #drop-zone {
             position: absolute; top: 0; left: 0;
@@ -39,7 +40,7 @@
         .hint { font-size: 12px; color: #444; margin-top: 30px; position: absolute; bottom: 40px;}
         
         .menu-controls { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-        .toggle-container { display: flex; align-items: center; gap: 12px; background: rgba(20, 20, 20, 0.8); padding: 16px 24px; border-radius: 8px; border: 1px solid #222; cursor: pointer; transition: border-color 0.2s; width: 240px; box-sizing: border-box; justify-content: center; }
+        .toggle-container { display: flex; align-items: center; gap: 12px; background: rgba(20, 20, 20, 0.8); padding: 16px 24px; border-radius: 8px; border: 1px solid #222; cursor: pointer; transition: border-color 0.2s; width: 260px; box-sizing: border-box; justify-content: center; }
         .toggle-container:hover { border-color: #555; }
         input[type="checkbox"] { width: 20px; height: 20px; accent-color: #eeeeee; cursor: pointer; }
         
@@ -47,7 +48,7 @@
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #eee; cursor: pointer; transition: transform 0.1s; }
         input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
-        .play-btn { background: #eeeeee; color: #050505; border: none; padding: 14px 40px; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: transform 0.1s, background 0.2s; margin-top: 10px; width: 240px; }
+        .play-btn { background: #eeeeee; color: #050505; border: none; padding: 14px 40px; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: transform 0.1s, background 0.2s; margin-top: 10px; width: 260px; }
         .play-btn:hover { background: #ffffff; transform: scale(1.03); }
 
         /* Progress Bar Styles */
@@ -56,15 +57,22 @@
         .progress-fill { height: 100%; width: 0%; background: #eee; transition: width 0.1s linear; }
         .progress-text-row { display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: #888; font-family: monospace; }
 
-        /* --- SETTINGS PANEL & BUTTON --- */
+        /* --- UI BUTTONS --- */
         #settingsBtn {
             position: absolute; top: 24px; right: 24px;
             width: 32px; height: 32px; cursor: pointer; z-index: 30;
             fill: #666; transition: fill 0.2s, transform 0.3s;
-            pointer-events: auto;
         }
         #settingsBtn:hover { fill: #eee; transform: rotate(45deg); }
+
+        #fullscreenBtn {
+            position: absolute; bottom: 24px; left: 24px;
+            width: 32px; height: 32px; cursor: pointer; z-index: 30;
+            fill: #444; transition: fill 0.2s, transform 0.2s;
+        }
+        #fullscreenBtn:hover { fill: #eee; transform: scale(1.1); }
         
+        /* Settings Panel */
         #settingsPanel {
             position: absolute; top: 0; right: -380px; 
             width: 380px; height: 100vh;
@@ -109,6 +117,10 @@
 
     <svg id="settingsBtn" viewBox="0 0 24 24">
         <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+    </svg>
+
+    <svg id="fullscreenBtn" viewBox="0 0 24 24">
+        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
     </svg>
 
     <div id="settingsPanel">
@@ -174,6 +186,7 @@
                 <input type="checkbox" id="holdToggle" checked>
                 <span style="font-size: 16px; color: #ddd;">enable hold notes</span>
             </label>
+            
             <div class="toggle-container" style="flex-direction: column; align-items: stretch; gap: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 14px; color: #aaa;">difficulty</span>
@@ -181,6 +194,15 @@
                 </div>
                 <input type="range" id="diffSlider" min="1" max="15" value="5">
             </div>
+
+            <div class="toggle-container" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 14px; color: #aaa;">chaos (sensitivity)</span>
+                    <span id="chaosDisplay" style="font-size: 16px; color: #fff; font-weight: 700;">5</span>
+                </div>
+                <input type="range" id="chaosSlider" min="0" max="10" value="5">
+            </div>
+
             <button class="play-btn" id="startBtn">play</button>
         </div>
         
@@ -204,7 +226,7 @@
             keys: ['a', 's', 'k', 'l'], lanes: 4, laneWidth: 140, noteRadius: 48,
             hitPosition: 680, hitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
             currentHitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
-            enableHolds: true, difficulty: 5, scrollSpeed: 1100, style: 'circle', theme: 'minimal' 
+            enableHolds: true, difficulty: 5, chaos: 5, scrollSpeed: 1100, style: 'circle', theme: 'minimal' 
         };
 
         const themes = {
@@ -214,11 +236,18 @@
             neon:    { side: '#ff007f', mid: '#39ff14', activeTrail: 'rgba(57,255,20,0.15)' }
         };
 
-        let audioCtx, audioSource, audioBuffer, customHitBuffer, musicGainNode, progressInterval;
+        let audioCtx, audioSource, audioBuffer, customHitBuffer, defaultHitBuffer, musicGainNode, progressInterval;
         let gameStartTime = 0, isPlaying = false, isPaused = false, animationFrameId;
         let notes = [], ripples = [], activeFlashes = [0, 0, 0, 0], feedbackText = { text: "", alpha: 0, scale: 1, color: "", yOffset: 0 };
         let stats = { score: 0, combo: 0, maxCombo: 0, perfects: 0, goods: 0, misses: 0, total: 0 };
         const keyState = { 0: false, 1: false, 2: false, 3: false };
+
+        // --- FULLSCREEN UI ---
+        const fsBtn = document.getElementById('fullscreenBtn');
+        fsBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen blocked."));
+            else document.exitFullscreen();
+        });
 
         // --- SETTINGS UI ---
         const settingsBtn = document.getElementById('settingsBtn');
@@ -312,7 +341,17 @@
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') await audioCtx.resume();
             
-            // Set UI to loading state
+            // Try to load default osu.mp3 hit sound in the background if not loaded
+            if (!defaultHitBuffer && !customHitBuffer) {
+                try {
+                    const response = await fetch('osu.mp3');
+                    const arrayBuffer = await response.arrayBuffer();
+                    defaultHitBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                } catch (e) {
+                    console.log("Could not load osu.mp3 (likely running locally without a server). Falling back to synth.");
+                }
+            }
+            
             menuTitle.textContent = "loading...";
             menuSubtitle.textContent = "reading file into memory...";
             menuControls.style.display = 'none';
@@ -321,21 +360,17 @@
             
             const reader = new FileReader();
             
-            // 1. File reading progress (up to 20% of the bar)
             reader.onprogress = (e) => {
                 if (e.lengthComputable) {
                     const percent = (e.loaded / e.total) * 20;
-                    pFill.style.width = `${percent}%`;
-                    pPercent.textContent = `${Math.floor(percent)}%`;
+                    pFill.style.width = `${percent}%`; pPercent.textContent = `${Math.floor(percent)}%`;
                 }
             };
 
             reader.onload = async function(e) {
                 menuSubtitle.textContent = "decoding audio (this might take a moment)...";
-                
-                // 2. Audio Decoding Simulated Progress (20% to 95%)
                 const mbSize = file.size / 1048576;
-                const estDecodeTimeMs = Math.max(1000, mbSize * 400); // ~400ms per MB heuristic
+                const estDecodeTimeMs = Math.max(1000, mbSize * 400); 
                 const startTime = performance.now();
                 
                 progressInterval = setInterval(() => {
@@ -343,29 +378,20 @@
                     const percent = 20 + Math.min(75, (elapsed / estDecodeTimeMs) * 75);
                     const timeLeft = Math.max(0, (estDecodeTimeMs - elapsed) / 1000);
                     
-                    pFill.style.width = `${percent}%`;
-                    pPercent.textContent = `${Math.floor(percent)}%`;
+                    pFill.style.width = `${percent}%`; pPercent.textContent = `${Math.floor(percent)}%`;
                     pEta.textContent = `ETA: ${timeLeft.toFixed(1)}s`;
                 }, 50);
 
                 try {
                     audioBuffer = await audioCtx.decodeAudioData(e.target.result);
                     
-                    // 3. Complete (100%)
                     clearInterval(progressInterval);
-                    pFill.style.width = `100%`;
-                    pPercent.textContent = `100%`;
-                    pEta.textContent = `ETA: 0.0s`;
+                    pFill.style.width = `100%`; pPercent.textContent = `100%`; pEta.textContent = `ETA: 0.0s`;
                     menuSubtitle.textContent = "finalizing chart...";
                     
-                    // Tiny delay to let the user see the 100% bar before showing the menu
-                    setTimeout(() => {
-                        renderReadyMenu("audio processed successfully.");
-                    }, 400);
-
+                    setTimeout(() => { renderReadyMenu("audio processed successfully."); }, 400);
                 } catch (err) { 
-                    clearInterval(progressInterval);
-                    renderErrorMenu("error decoding audio."); 
+                    clearInterval(progressInterval); renderErrorMenu("error decoding audio."); 
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -373,27 +399,24 @@
 
         function renderReadyMenu(msg) {
             dropZone.classList.remove('hidden');
-            menuTitle.textContent = "ready.";
-            menuSubtitle.innerHTML = msg;
-            pWrapper.style.display = 'none';
-            menuControls.style.display = 'flex';
+            menuTitle.textContent = "ready."; menuSubtitle.innerHTML = msg;
+            pWrapper.style.display = 'none'; menuControls.style.display = 'flex';
             
-            document.getElementById('diffSlider').addEventListener('input', (e) => {
-                document.getElementById('diffDisplay').textContent = e.target.value;
-            });
+            document.getElementById('diffSlider').addEventListener('input', (e) => document.getElementById('diffDisplay').textContent = e.target.value);
+            document.getElementById('chaosSlider').addEventListener('input', (e) => document.getElementById('chaosDisplay').textContent = e.target.value);
+
             document.getElementById('startBtn').onclick = () => {
                 config.enableHolds = document.getElementById('holdToggle').checked;
                 config.difficulty = parseInt(document.getElementById('diffSlider').value, 10);
+                config.chaos = parseInt(document.getElementById('chaosSlider').value, 10);
                 startGame();
             };
         }
 
         function renderErrorMenu(msg) {
             dropZone.classList.remove('hidden');
-            menuTitle.textContent = "rhythm.";
-            menuSubtitle.innerHTML = msg;
-            pWrapper.style.display = 'none';
-            menuControls.style.display = 'none';
+            menuTitle.textContent = "rhythm."; menuSubtitle.innerHTML = msg;
+            pWrapper.style.display = 'none'; menuControls.style.display = 'none';
         }
 
         function startGame() {
@@ -403,30 +426,21 @@
             
             config.scrollSpeed = 700 + (config.difficulty * 80); 
             const windowScale = Math.max(0.6, 1 - (config.difficulty - 5) * 0.03); 
-            config.currentHitWindows = {
-                perfect: config.hitWindows.perfect * windowScale,
-                good: config.hitWindows.good * windowScale,
-                miss: config.hitWindows.miss * windowScale
-            };
+            config.currentHitWindows = { perfect: config.hitWindows.perfect * windowScale, good: config.hitWindows.good * windowScale, miss: config.hitWindows.miss * windowScale };
 
             generateSmartChart(audioBuffer);
             
-            audioSource = audioCtx.createBufferSource();
-            audioSource.buffer = audioBuffer;
-            musicGainNode = audioCtx.createGain();
-            musicGainNode.gain.value = 0.4; 
+            audioSource = audioCtx.createBufferSource(); audioSource.buffer = audioBuffer;
+            musicGainNode = audioCtx.createGain(); musicGainNode.gain.value = 0.4; 
             audioSource.connect(musicGainNode); musicGainNode.connect(audioCtx.destination);
             audioSource.onended = () => { if (isPlaying) endGame("track finished."); };
             
-            gameStartTime = audioCtx.currentTime + 1.5;
-            audioSource.start(gameStartTime);
-            isPlaying = true;
-            gameLoop();
+            gameStartTime = audioCtx.currentTime + 1.5; audioSource.start(gameStartTime);
+            isPlaying = true; gameLoop();
         }
 
         function endGame(message) {
-            isPlaying = false;
-            cancelAnimationFrame(animationFrameId);
+            isPlaying = false; cancelAnimationFrame(animationFrameId);
             if (audioSource) { audioSource.onended = null; try { audioSource.stop(); } catch(e) {} audioSource.disconnect(); }
             if (musicGainNode) musicGainNode.disconnect();
             renderReadyMenu(`${message}<br><br>score: ${stats.score} | acc: ${getAccuracy()} | max combo: ${stats.maxCombo}<br><br>drop another file or click play.`);
@@ -449,6 +463,12 @@
             const mappingBpm = 70 + (config.difficulty * 10); 
             const beat = 60 / mappingBpm;
             
+            // Chaos calculations (sensitivity)
+            const cFactor = config.chaos / 10;
+            const tHigh = avgEnergy * (1.8 - (cFactor * 0.9)); 
+            const tMid = avgEnergy * (1.0 - (cFactor * 0.5)); 
+            const tLow = avgEnergy * (0.5 - (cFactor * 0.3)); 
+            
             let time = 1.5, laneBusyUntil = [0, 0, 0, 0];
 
             function getFreeLane(atTime) {
@@ -461,7 +481,7 @@
                 const chunkIdx = Math.floor(time * 10);
                 const energy = energies[chunkIdx] || 0;
                 
-                if (energy > avgEnergy * 1.6) {
+                if (energy > tHigh) {
                     if (Math.random() > 0.6 || !config.enableHolds) {
                         let l1 = getFreeLane(time);
                         if (l1 !== -1) {
@@ -477,10 +497,10 @@
                         }
                     }
                     time += beat / 2; 
-                } else if (energy > avgEnergy * 0.85) {
+                } else if (energy > tMid) {
                     let lane = getFreeLane(time); if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
                     time += beat / 2; 
-                } else if (energy > avgEnergy * 0.4) {
+                } else if (energy > tLow) {
                     let lane = getFreeLane(time); if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
                     time += beat; 
                 } else {
@@ -499,9 +519,12 @@
             const gain = audioCtx.createGain();
             source.connect(gain); gain.connect(audioCtx.destination);
 
-            if (customHitBuffer) {
-                source.buffer = customHitBuffer; gain.gain.setValueAtTime(1.0, audioCtx.currentTime); source.start();
+            const activeSound = customHitBuffer || defaultHitBuffer;
+
+            if (activeSound) {
+                source.buffer = activeSound; gain.gain.setValueAtTime(1.0, audioCtx.currentTime); source.start();
             } else {
+                // Procedural Fallback
                 const osc = audioCtx.createOscillator(); osc.connect(gain); osc.type = 'sine';
                 osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
@@ -509,7 +532,7 @@
             }
         }
         function playMissSound() {
-            if (!audioCtx || customHitBuffer) return; 
+            if (!audioCtx || customHitBuffer || defaultHitBuffer) return; 
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(120, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
