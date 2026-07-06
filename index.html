@@ -1,4 +1,3 @@
-// Hi //
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,12 +38,23 @@
         p { font-size: 16px; color: #666; margin: 0; font-weight: 400; text-align: center; line-height: 1.5; }
         .hint { font-size: 12px; color: #444; margin-top: 30px; position: absolute; bottom: 40px;}
         
-        .menu-controls { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        .toggle-container { display: flex; align-items: center; gap: 12px; background: rgba(20, 20, 20, 0.8); padding: 12px 24px; border-radius: 8px; border: 1px solid #222; cursor: pointer; transition: border-color 0.2s; }
+        .menu-controls { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .toggle-container { display: flex; align-items: center; gap: 12px; background: rgba(20, 20, 20, 0.8); padding: 16px 24px; border-radius: 8px; border: 1px solid #222; cursor: pointer; transition: border-color 0.2s; width: 240px; box-sizing: border-box; justify-content: center; }
         .toggle-container:hover { border-color: #555; }
         input[type="checkbox"] { width: 20px; height: 20px; accent-color: #eeeeee; cursor: pointer; }
-        .play-btn { background: #eeeeee; color: #050505; border: none; padding: 14px 40px; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: transform 0.1s, background 0.2s; }
-        .play-btn:hover { background: #ffffff; transform: scale(1.05); }
+        
+        input[type="range"] { -webkit-appearance: none; background: #222; height: 6px; border-radius: 3px; outline: none; margin-top: 8px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #eee; cursor: pointer; transition: transform 0.1s; }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        .play-btn { background: #eeeeee; color: #050505; border: none; padding: 14px 40px; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: transform 0.1s, background 0.2s; margin-top: 10px; width: 240px; }
+        .play-btn:hover { background: #ffffff; transform: scale(1.03); }
+
+        /* Progress Bar Styles */
+        .progress-wrapper { width: 300px; margin-top: 24px; display: none; }
+        .progress-track { background: #222; border-radius: 8px; height: 8px; overflow: hidden; width: 100%; border: 1px solid #333; }
+        .progress-fill { height: 100%; width: 0%; background: #eee; transition: width 0.1s linear; }
+        .progress-text-row { display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: #888; font-family: monospace; }
 
         /* --- SETTINGS PANEL & BUTTON --- */
         #settingsBtn {
@@ -56,7 +66,7 @@
         #settingsBtn:hover { fill: #eee; transform: rotate(45deg); }
         
         #settingsPanel {
-            position: absolute; top: 0; right: -380px; /* Widened for safety */
+            position: absolute; top: 0; right: -380px; 
             width: 380px; height: 100vh;
             background: rgba(10, 10, 10, 0.98);
             border-left: 1px solid #222;
@@ -72,23 +82,19 @@
         .setting-group { display: flex; flex-direction: column; gap: 8px; }
         .setting-group label { font-size: 13px; color: #666; text-transform: lowercase; }
         
-        /* Keybind inputs */
         .keybind-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; box-sizing: border-box; }
         .key-input { width: 100%; box-sizing: border-box; background: #151515; border: 1px solid #333; border-radius: 4px; color: #fff; text-align: center; padding: 8px 0; font-family: inherit; font-size: 14px; cursor: pointer; transition: border-color 0.2s; text-transform: uppercase; }
         .key-input:focus { border-color: #eee; outline: none; background: #222; }
         
-        /* Dropdowns */
         select { background: #151515; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; font-family: inherit; cursor: pointer; outline: none; width: 100%; box-sizing: border-box;}
         select:focus { border-color: #eee; }
 
-        /* Preview Container */
         .preview-container {
             display: flex; justify-content: center; align-items: center;
             background: #111; padding: 20px; border-radius: 8px;
             border: 1px solid #333; height: 80px;
         }
 
-        /* Sound Dropzone */
         #soundDropzone {
             border: 1px dashed #444; background: #111;
             padding: 20px; border-radius: 6px; text-align: center;
@@ -150,15 +156,34 @@
     </div>
 
     <div id="drop-zone">
-        <h1>rhythm.</h1>
-        <p>drop an mp3 or wav here.</p>
-        <div class="menu-controls">
+        <h1 id="menuTitle">rhythm.</h1>
+        <p id="menuSubtitle">drop an mp3 or wav here.</p>
+        
+        <div class="progress-wrapper" id="progressWrapper">
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text-row">
+                <span id="progressPercent">0%</span>
+                <span id="progressETA">ETA: --s</span>
+            </div>
+        </div>
+
+        <div class="menu-controls" id="menuControls" style="display: none;">
             <label class="toggle-container" for="holdToggle">
                 <input type="checkbox" id="holdToggle" checked>
                 <span style="font-size: 16px; color: #ddd;">enable hold notes</span>
             </label>
-            <button class="play-btn" id="startBtn" style="display:none;">play</button>
+            <div class="toggle-container" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 14px; color: #aaa;">difficulty</span>
+                    <span id="diffDisplay" style="font-size: 16px; color: #fff; font-weight: 700;">5</span>
+                </div>
+                <input type="range" id="diffSlider" min="1" max="15" value="5">
+            </div>
+            <button class="play-btn" id="startBtn">play</button>
         </div>
+        
         <p class="hint">controls: customizable inside settings | pause: p | quit: esc</p>
     </div>
 
@@ -168,30 +193,18 @@
         // --- HIGH-DPI CANVAS SETUP ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        
-        const GAME_WIDTH = 560;
-        const GAME_HEIGHT = 800;
-        
+        const GAME_WIDTH = 560; const GAME_HEIGHT = 800;
         const dpr = window.devicePixelRatio || 1;
-        canvas.style.width = GAME_WIDTH + 'px';
-        canvas.style.height = GAME_HEIGHT + 'px';
-        canvas.width = GAME_WIDTH * dpr;
-        canvas.height = GAME_HEIGHT * dpr;
+        canvas.style.width = GAME_WIDTH + 'px'; canvas.style.height = GAME_HEIGHT + 'px';
+        canvas.width = GAME_WIDTH * dpr; canvas.height = GAME_HEIGHT * dpr;
         ctx.scale(dpr, dpr);
 
-        // --- CUSTOMIZABLE USER CONFIG ---
+        // --- CONFIG ---
         const config = {
-            keys: ['a', 's', 'k', 'l'], 
-            lanes: 4,
-            laneWidth: 140, 
-            noteRadius: 48,
-            hitPosition: 680, 
-            scrollSpeed: 1100,
-            hitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
-            bpm: 120, 
-            enableHolds: true,
-            style: 'circle', 
-            theme: 'minimal' 
+            keys: ['a', 's', 'k', 'l'], lanes: 4, laneWidth: 140, noteRadius: 48,
+            hitPosition: 680, hitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
+            currentHitWindows: { perfect: 0.05, good: 0.1, miss: 0.15 }, 
+            enableHolds: true, difficulty: 5, scrollSpeed: 1100, style: 'circle', theme: 'minimal' 
         };
 
         const themes = {
@@ -201,46 +214,22 @@
             neon:    { side: '#ff007f', mid: '#39ff14', activeTrail: 'rgba(57,255,20,0.15)' }
         };
 
-        // --- GAME STATE ---
-        let audioCtx, audioSource, audioBuffer, customHitBuffer;
-        let musicGainNode; // To control music volume separate from SFX
-        let gameStartTime = 0;
-        let isPlaying = false;
-        let isPaused = false;
-        let animationFrameId;
-        
-        let notes = [];
-        let ripples = []; 
-        let activeFlashes = [0, 0, 0, 0]; 
-        let feedbackText = { text: "", alpha: 0, scale: 1, color: "", yOffset: 0 };
-        
+        let audioCtx, audioSource, audioBuffer, customHitBuffer, musicGainNode, progressInterval;
+        let gameStartTime = 0, isPlaying = false, isPaused = false, animationFrameId;
+        let notes = [], ripples = [], activeFlashes = [0, 0, 0, 0], feedbackText = { text: "", alpha: 0, scale: 1, color: "", yOffset: 0 };
         let stats = { score: 0, combo: 0, maxCombo: 0, perfects: 0, goods: 0, misses: 0, total: 0 };
         const keyState = { 0: false, 1: false, 2: false, 3: false };
 
-        // --- SETTINGS UI INTERACTION ---
+        // --- SETTINGS UI ---
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsPanel = document.getElementById('settingsPanel');
-        const soundDropzone = document.getElementById('soundDropzone');
         const previewCanvas = document.getElementById('previewCanvas');
         const pCtx = previewCanvas.getContext('2d');
 
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            settingsPanel.classList.toggle('open');
-            drawPreview(); // Ensure it's drawn when opened
-        });
-        document.addEventListener('click', (e) => {
-            if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
-                settingsPanel.classList.remove('open');
-            }
-        });
+        settingsBtn.addEventListener('click', (e) => { e.stopPropagation(); settingsPanel.classList.toggle('open'); drawPreview(); });
+        document.addEventListener('click', (e) => { if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) settingsPanel.classList.remove('open'); });
 
-        // Initialize Keybind boxes
-        function updateKeybindUI() {
-            for(let i=0; i<4; i++) {
-                document.getElementById(`key${i}`).value = config.keys[i];
-            }
-        }
+        function updateKeybindUI() { for(let i=0; i<4; i++) document.getElementById(`key${i}`).value = config.keys[i]; }
         updateKeybindUI();
 
         for(let i=0; i<4; i++) {
@@ -249,63 +238,38 @@
                 e.preventDefault();
                 const pressedKey = e.key.toLowerCase();
                 if (pressedKey.length === 1 || pressedKey.startsWith('arrow')) {
-                    config.keys[i] = pressedKey.replace('arrow', ''); // simplify display
-                    input.value = config.keys[i];
+                    config.keys[i] = pressedKey.replace('arrow', ''); input.value = config.keys[i];
                 }
             });
         }
 
-        // Live Preview Renderer
         function drawPreview() {
             pCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             const activePalette = themes[config.theme];
-            
-            // Draw a fake "Side" note and "Mid" note
-            const notes = [
-                { x: 40, color: activePalette.side },
-                { x: 120, color: activePalette.mid }
-            ];
-
-            notes.forEach(n => {
+            const pNotes = [{ x: 40, color: activePalette.side }, { x: 120, color: activePalette.mid }];
+            pNotes.forEach(n => {
                 pCtx.fillStyle = n.color;
-                if (config.style === 'circle') {
-                    pCtx.beginPath();
-                    pCtx.arc(n.x, 40, 24, 0, Math.PI * 2);
-                    pCtx.fill();
-                } else {
-                    pCtx.fillRect(n.x - 30, 25, 60, 20);
-                }
+                if (config.style === 'circle') { pCtx.beginPath(); pCtx.arc(n.x, 40, 24, 0, Math.PI * 2); pCtx.fill(); } 
+                else { pCtx.fillRect(n.x - 30, 25, 60, 20); }
             });
         }
 
-        document.getElementById('noteStyleSelect').addEventListener('change', (e) => {
-            config.style = e.target.value;
-            drawPreview();
-        });
-        document.getElementById('colorThemeSelect').addEventListener('change', (e) => {
-            config.theme = e.target.value;
-            drawPreview();
-        });
-        
-        // Initial Preview Draw
+        document.getElementById('noteStyleSelect').addEventListener('change', (e) => { config.style = e.target.value; drawPreview(); });
+        document.getElementById('colorThemeSelect').addEventListener('change', (e) => { config.theme = e.target.value; drawPreview(); });
         drawPreview();
 
-        // Custom Hit Sound drop logic
+        const soundDropzone = document.getElementById('soundDropzone');
         soundDropzone.addEventListener('dragover', (e) => { e.preventDefault(); soundDropzone.classList.add('dragover'); });
         soundDropzone.addEventListener('dragleave', () => soundDropzone.classList.remove('dragover'));
         soundDropzone.addEventListener('drop', async (e) => {
-            e.preventDefault(); e.stopPropagation();
-            soundDropzone.classList.remove('dragover');
+            e.preventDefault(); e.stopPropagation(); soundDropzone.classList.remove('dragover');
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('audio/')) {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const reader = new FileReader();
                 reader.onload = async function(evt) {
-                    try {
-                        customHitBuffer = await audioCtx.decodeAudioData(evt.target.result);
-                        soundDropzone.textContent = "sound saved!";
-                        soundDropzone.classList.add('loaded');
-                    } catch(err) { alert("failed to process sample."); }
+                    try { customHitBuffer = await audioCtx.decodeAudioData(evt.target.result); soundDropzone.textContent = "sound saved!"; soundDropzone.classList.add('loaded'); } 
+                    catch(err) { alert("failed to process sample."); }
                 };
                 reader.readAsArrayBuffer(file);
             }
@@ -314,68 +278,122 @@
         // --- INPUT HANDLING ---
         window.addEventListener('keydown', async (e) => {
             if (e.key === 'Escape' && isPlaying) { endGame("game stopped."); return; }
-            if (e.key.toLowerCase() === 'p' && isPlaying) { togglePause(); return; }
+            if (e.key.toLowerCase() === 'p' && isPlaying) { isPaused = !isPaused; if(isPaused) audioCtx.suspend(); else audioCtx.resume(); return; }
+            if (e.repeat || isPaused || !isPlaying || document.activeElement.classList.contains('key-input')) return; 
 
-            if (e.repeat || isPaused || !isPlaying) return;
-            if (document.activeElement.classList.contains('key-input')) return; // Block game input if typing in settings
-
-            const pressedKey = e.key.toLowerCase().replace('arrow', '');
-            const lane = config.keys.indexOf(pressedKey);
-            
-            if (lane !== -1) {
-                keyState[lane] = true;
-                activeFlashes[lane] = 1.0;
-                createRipple(lane);
-                handleHit(lane);
-            }
+            const lane = config.keys.indexOf(e.key.toLowerCase().replace('arrow', ''));
+            if (lane !== -1) { keyState[lane] = true; activeFlashes[lane] = 1.0; createRipple(lane); handleHit(lane); }
         });
-
         window.addEventListener('keyup', (e) => {
-            const pressedKey = e.key.toLowerCase().replace('arrow', '');
-            const lane = config.keys.indexOf(pressedKey);
+            const lane = config.keys.indexOf(e.key.toLowerCase().replace('arrow', ''));
             if (lane !== -1) keyState[lane] = false;
         });
 
-        async function togglePause() {
-            isPaused = !isPaused;
-            if (isPaused) await audioCtx.suspend();
-            else await audioCtx.resume();
-        }
-
         // --- DRAG & DROP TRACK LOGIC ---
         const dropZone = document.getElementById('drop-zone');
+        const menuTitle = document.getElementById('menuTitle');
+        const menuSubtitle = document.getElementById('menuSubtitle');
+        const pWrapper = document.getElementById('progressWrapper');
+        const pFill = document.getElementById('progressFill');
+        const pPercent = document.getElementById('progressPercent');
+        const pEta = document.getElementById('progressETA');
+        const menuControls = document.getElementById('menuControls');
+
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault(); dropZone.classList.remove('dragover');
             const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('audio/')) {
-                dropZone.querySelector('h1').textContent = "loading...";
-                dropZone.querySelector('p').textContent = "analyzing audio frequencies.";
-                loadAudioFile(file);
-            } else {
-                resetMenu("please drop a valid audio file (.mp3, .wav)");
-            }
+            if (file && file.type.startsWith('audio/')) loadAudioFile(file);
+            else renderErrorMenu("please drop a valid audio file (.mp3, .wav)");
         });
 
         async function loadAudioFile(file) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') await audioCtx.resume();
+            
+            // Set UI to loading state
+            menuTitle.textContent = "loading...";
+            menuSubtitle.textContent = "reading file into memory...";
+            menuControls.style.display = 'none';
+            pWrapper.style.display = 'block';
+            pFill.style.width = '0%'; pPercent.textContent = '0%'; pEta.textContent = 'ETA: --s';
+            
             const reader = new FileReader();
+            
+            // 1. File reading progress (up to 20% of the bar)
+            reader.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = (e.loaded / e.total) * 20;
+                    pFill.style.width = `${percent}%`;
+                    pPercent.textContent = `${Math.floor(percent)}%`;
+                }
+            };
+
             reader.onload = async function(e) {
+                menuSubtitle.textContent = "decoding audio (this might take a moment)...";
+                
+                // 2. Audio Decoding Simulated Progress (20% to 95%)
+                const mbSize = file.size / 1048576;
+                const estDecodeTimeMs = Math.max(1000, mbSize * 400); // ~400ms per MB heuristic
+                const startTime = performance.now();
+                
+                progressInterval = setInterval(() => {
+                    const elapsed = performance.now() - startTime;
+                    const percent = 20 + Math.min(75, (elapsed / estDecodeTimeMs) * 75);
+                    const timeLeft = Math.max(0, (estDecodeTimeMs - elapsed) / 1000);
+                    
+                    pFill.style.width = `${percent}%`;
+                    pPercent.textContent = `${Math.floor(percent)}%`;
+                    pEta.textContent = `ETA: ${timeLeft.toFixed(1)}s`;
+                }, 50);
+
                 try {
                     audioBuffer = await audioCtx.decodeAudioData(e.target.result);
-                    dropZone.querySelector('h1').textContent = "ready.";
-                    dropZone.querySelector('p').textContent = "audio processed successfully.";
-                    const startBtn = document.getElementById('startBtn');
-                    startBtn.style.display = "block";
-                    startBtn.onclick = () => {
-                        config.enableHolds = document.getElementById('holdToggle').checked;
-                        startGame();
-                    };
-                } catch (err) { resetMenu("error decoding audio."); }
+                    
+                    // 3. Complete (100%)
+                    clearInterval(progressInterval);
+                    pFill.style.width = `100%`;
+                    pPercent.textContent = `100%`;
+                    pEta.textContent = `ETA: 0.0s`;
+                    menuSubtitle.textContent = "finalizing chart...";
+                    
+                    // Tiny delay to let the user see the 100% bar before showing the menu
+                    setTimeout(() => {
+                        renderReadyMenu("audio processed successfully.");
+                    }, 400);
+
+                } catch (err) { 
+                    clearInterval(progressInterval);
+                    renderErrorMenu("error decoding audio."); 
+                }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        function renderReadyMenu(msg) {
+            dropZone.classList.remove('hidden');
+            menuTitle.textContent = "ready.";
+            menuSubtitle.innerHTML = msg;
+            pWrapper.style.display = 'none';
+            menuControls.style.display = 'flex';
+            
+            document.getElementById('diffSlider').addEventListener('input', (e) => {
+                document.getElementById('diffDisplay').textContent = e.target.value;
+            });
+            document.getElementById('startBtn').onclick = () => {
+                config.enableHolds = document.getElementById('holdToggle').checked;
+                config.difficulty = parseInt(document.getElementById('diffSlider').value, 10);
+                startGame();
+            };
+        }
+
+        function renderErrorMenu(msg) {
+            dropZone.classList.remove('hidden');
+            menuTitle.textContent = "rhythm.";
+            menuSubtitle.innerHTML = msg;
+            pWrapper.style.display = 'none';
+            menuControls.style.display = 'none';
         }
 
         function startGame() {
@@ -383,18 +401,21 @@
             stats = { score: 0, combo: 0, maxCombo: 0, perfects: 0, goods: 0, misses: 0, total: 0 };
             ripples = []; notes = []; isPaused = false;
             
+            config.scrollSpeed = 700 + (config.difficulty * 80); 
+            const windowScale = Math.max(0.6, 1 - (config.difficulty - 5) * 0.03); 
+            config.currentHitWindows = {
+                perfect: config.hitWindows.perfect * windowScale,
+                good: config.hitWindows.good * windowScale,
+                miss: config.hitWindows.miss * windowScale
+            };
+
             generateSmartChart(audioBuffer);
             
             audioSource = audioCtx.createBufferSource();
             audioSource.buffer = audioBuffer;
-            
-            // DUCK THE MUSIC VOLUME SO HITS POP
             musicGainNode = audioCtx.createGain();
-            musicGainNode.gain.value = 0.4; // 40% volume for the backing track
-            
-            audioSource.connect(musicGainNode);
-            musicGainNode.connect(audioCtx.destination);
-            
+            musicGainNode.gain.value = 0.4; 
+            audioSource.connect(musicGainNode); musicGainNode.connect(audioCtx.destination);
             audioSource.onended = () => { if (isPlaying) endGame("track finished."); };
             
             gameStartTime = audioCtx.currentTime + 1.5;
@@ -406,47 +427,34 @@
         function endGame(message) {
             isPlaying = false;
             cancelAnimationFrame(animationFrameId);
-            if (audioSource) {
-                audioSource.onended = null;
-                try { audioSource.stop(); } catch(e) {}
-                audioSource.disconnect();
-            }
+            if (audioSource) { audioSource.onended = null; try { audioSource.stop(); } catch(e) {} audioSource.disconnect(); }
             if (musicGainNode) musicGainNode.disconnect();
-            resetMenu(`${message}<br><br>score: ${stats.score} | acc: ${getAccuracy()} | max combo: ${stats.maxCombo}<br><br>drop another file to play again.`);
-        }
-
-        function resetMenu(msg) {
-            document.getElementById('startBtn').style.display = "none";
-            dropZone.classList.remove('hidden');
-            dropZone.innerHTML = `<h1>rhythm.</h1><p>${msg}</p><div class="menu-controls"><label class="toggle-container" for="holdToggle"><input type="checkbox" id="holdToggle" checked><span style="font-size: 16px; color: #ddd;">enable hold notes</span></label><button class="play-btn" id="startBtn" style="display:none;">play</button></div><p class="hint">controls: customizable inside settings | pause: p | quit: esc</p>`;
+            renderReadyMenu(`${message}<br><br>score: ${stats.score} | acc: ${getAccuracy()} | max combo: ${stats.maxCombo}<br><br>drop another file or click play.`);
         }
 
         // --- SMART AUDIO ANALYSIS GENERATOR ---
         function generateSmartChart(buffer) {
             notes = [];
             const channelData = buffer.getChannelData(0);
-            const sampleRate = buffer.sampleRate;
-            const chunkSize = Math.floor(sampleRate * 0.1); 
+            const chunkSize = Math.floor(buffer.sampleRate * 0.1); 
             let energies = [];
             
             for (let i = 0; i < channelData.length; i += chunkSize) {
                 let sum = 0, count = 0;
-                for (let j = 0; j < chunkSize && i + j < channelData.length; j += 10) { 
-                    sum += Math.abs(channelData[i + j]); count++;
-                }
+                for (let j = 0; j < chunkSize && i + j < channelData.length; j += 10) { sum += Math.abs(channelData[i + j]); count++; }
                 energies.push(sum / count);
             }
             
             const avgEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
-            const beat = 60 / config.bpm;
-            let time = 1.5;
-            let laneBusyUntil = [0, 0, 0, 0];
+            const mappingBpm = 70 + (config.difficulty * 10); 
+            const beat = 60 / mappingBpm;
+            
+            let time = 1.5, laneBusyUntil = [0, 0, 0, 0];
 
             function getFreeLane(atTime) {
                 let freeLanes = [];
-                for (let i = 0; i < 4; i++) { if (laneBusyUntil[i] <= atTime) freeLanes.push(i); }
-                if (freeLanes.length === 0) return -1;
-                return freeLanes[Math.floor(Math.random() * freeLanes.length)];
+                for (let i = 0; i < 4; i++) if (laneBusyUntil[i] <= atTime) freeLanes.push(i);
+                return freeLanes.length === 0 ? -1 : freeLanes[Math.floor(Math.random() * freeLanes.length)];
             }
             
             while (time < buffer.duration - 2) {
@@ -457,47 +465,34 @@
                     if (Math.random() > 0.6 || !config.enableHolds) {
                         let l1 = getFreeLane(time);
                         if (l1 !== -1) {
-                            laneBusyUntil[l1] = time + 0.1; 
-                            let l2 = getFreeLane(time);
-                            if (l2 !== -1) {
-                                laneBusyUntil[l2] = time + 0.1;
-                                notes.push(createNote(time, l1, 0));
-                                notes.push(createNote(time, l2, 0));
-                            } else { notes.push(createNote(time, l1, 0)); }
+                            laneBusyUntil[l1] = time + 0.1; let l2 = getFreeLane(time);
+                            if (l2 !== -1) { laneBusyUntil[l2] = time + 0.1; notes.push(createNote(time, l1, 0)); notes.push(createNote(time, l2, 0)); } 
+                            else notes.push(createNote(time, l1, 0));
                         }
                     } else {
                         let lane = getFreeLane(time);
                         if (lane !== -1) {
-                            const holdLengths = [0.5, 1.0, 1.5, 2.0];
-                            const holdDuration = beat * holdLengths[Math.floor(Math.random() * holdLengths.length)];
-                            laneBusyUntil[lane] = time + holdDuration + 0.1; 
-                            notes.push(createNote(time, lane, holdDuration));
+                            const holdDuration = beat * [0.5, 1.0, 1.5, 2.0][Math.floor(Math.random() * 4)];
+                            laneBusyUntil[lane] = time + holdDuration + 0.1; notes.push(createNote(time, lane, holdDuration));
                         }
                     }
                     time += beat / 2; 
                 } else if (energy > avgEnergy * 0.85) {
-                    let lane = getFreeLane(time);
-                    if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
+                    let lane = getFreeLane(time); if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
                     time += beat / 2; 
                 } else if (energy > avgEnergy * 0.4) {
-                    let lane = getFreeLane(time);
-                    if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
+                    let lane = getFreeLane(time); if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
                     time += beat; 
                 } else {
-                    if (Math.random() > 0.5) {
-                        let lane = getFreeLane(time);
-                        if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); }
-                    }
+                    if (Math.random() > 0.5) { let lane = getFreeLane(time); if (lane !== -1) { laneBusyUntil[lane] = time + 0.1; notes.push(createNote(time, lane, 0)); } }
                     time += beat * 2; 
                 }
             }
         }
 
-        function createNote(time, lane, duration) {
-            return { time, lane, duration, hit: false, missed: false, completed: false, isHolding: false, headHit: false };
-        }
+        function createNote(time, lane, duration) { return { time, lane, duration, hit: false, missed: false, completed: false, isHolding: false, headHit: false }; }
 
-        // --- SOUND EFFECTS (MIXED LOUDER) ---
+        // --- SOUND EFFECTS ---
         function playHitSound() {
             if (!audioCtx) return;
             const source = audioCtx.createBufferSource();
@@ -505,53 +500,31 @@
             source.connect(gain); gain.connect(audioCtx.destination);
 
             if (customHitBuffer) {
-                source.buffer = customHitBuffer;
-                gain.gain.setValueAtTime(1.0, audioCtx.currentTime); // Boosted custom sound
-                source.start();
+                source.buffer = customHitBuffer; gain.gain.setValueAtTime(1.0, audioCtx.currentTime); source.start();
             } else {
-                // Boosted Procedural synth
-                const osc = audioCtx.createOscillator();
-                osc.connect(gain);
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime); // Much louder than previous 0.12
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                const osc = audioCtx.createOscillator(); osc.connect(gain); osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             }
         }
-
         function playMissSound() {
             if (!audioCtx || customHitBuffer) return; 
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15); osc.start(); osc.stop(audioCtx.currentTime + 0.15);
         }
 
         // --- GAME LOGIC ENGINE ---
-        function getAccuracy() {
-            if (stats.total === 0) return "100.00%";
-            return (((stats.perfects + (stats.goods * 0.5)) / stats.total) * 100).toFixed(2) + "%";
-        }
-
-        function createRipple(lane) {
-            ripples.push({ x: lane * config.laneWidth + config.laneWidth / 2, y: config.hitPosition, radius: config.noteRadius, alpha: 0.5 });
-        }
+        function getAccuracy() { return stats.total === 0 ? "100.00%" : (((stats.perfects + (stats.goods * 0.5)) / stats.total) * 100).toFixed(2) + "%"; }
+        function createRipple(lane) { ripples.push({ x: lane * config.laneWidth + config.laneWidth / 2, y: config.hitPosition, radius: config.noteRadius, alpha: 0.5 }); }
 
         function registerHit(judgment) {
             stats.total++;
-            if (judgment === "perfect") {
-                stats.combo++; stats.perfects++; stats.score += 300; playHitSound(); showFeedback("perfect", "#ffffff");
-            } else if (judgment === "good") {
-                stats.combo++; stats.goods++; stats.score += 100; playHitSound(); showFeedback("good", "#888888");
-            } else {
-                stats.combo = 0; stats.misses++; playMissSound(); showFeedback("miss", "#ff3333");
-            }
+            if (judgment === "perfect") { stats.combo++; stats.perfects++; stats.score += 300; playHitSound(); showFeedback("perfect", "#ffffff"); } 
+            else if (judgment === "good") { stats.combo++; stats.goods++; stats.score += 100; playHitSound(); showFeedback("good", "#888888"); } 
+            else { stats.combo = 0; stats.misses++; playMissSound(); showFeedback("miss", "#ff3333"); }
             if (stats.combo > stats.maxCombo) stats.maxCombo = stats.combo;
         }
 
@@ -561,154 +534,103 @@
             if (!targetNote) return;
 
             const timeDiff = Math.abs(targetNote.time - currentAudioTime);
-
-            if (timeDiff <= config.hitWindows.miss) {
-                let judgment = timeDiff <= config.hitWindows.perfect ? "perfect" : timeDiff <= config.hitWindows.good ? "good" : "miss";
+            if (timeDiff <= config.currentHitWindows.miss) {
+                let judgment = timeDiff <= config.currentHitWindows.perfect ? "perfect" : timeDiff <= config.currentHitWindows.good ? "good" : "miss";
                 if (judgment !== "miss") {
                     targetNote.headHit = true; registerHit(judgment); 
-                    if (targetNote.duration > 0) targetNote.isHolding = true; 
-                    else { targetNote.completed = true; targetNote.hit = true; }
-                } else {
-                    targetNote.missed = true; targetNote.completed = true; registerHit("miss");
-                }
+                    if (targetNote.duration > 0) targetNote.isHolding = true; else { targetNote.completed = true; targetNote.hit = true; }
+                } else { targetNote.missed = true; targetNote.completed = true; registerHit("miss"); }
             }
         }
-
         function showFeedback(text, color) { feedbackText = { text, color, alpha: 1.0, scale: 1.2, yOffset: 0 }; }
 
         // --- CORE DRAW LOOP ---
         function gameLoop() {
             if (!isPlaying) return;
             animationFrameId = requestAnimationFrame(gameLoop);
-            
             const currentAudioTime = audioCtx.currentTime - gameStartTime;
             ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-            
             const activePalette = themes[config.theme];
 
-            // 1. Draw Lanes & Receptor Beds
             for (let i = 0; i < config.lanes; i++) {
-                const x = i * config.laneWidth;
-                const centerX = x + config.laneWidth / 2;
-                
-                ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, GAME_HEIGHT); ctx.stroke();
+                const x = i * config.laneWidth; const centerX = x + config.laneWidth / 2;
+                ctx.strokeStyle = '#111'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, GAME_HEIGHT); ctx.stroke();
 
                 if (activeFlashes[i] > 0 && !isPaused) {
                     const gradient = ctx.createLinearGradient(0, config.hitPosition, 0, 0);
-                    gradient.addColorStop(0, `rgba(255, 255, 255, ${activeFlashes[i] * 0.08})`);
-                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                    ctx.fillStyle = gradient; ctx.fillRect(x, 0, config.laneWidth, config.hitPosition);
-                    activeFlashes[i] -= 0.05; 
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${activeFlashes[i] * 0.08})`); gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    ctx.fillStyle = gradient; ctx.fillRect(x, 0, config.laneWidth, config.hitPosition); activeFlashes[i] -= 0.05; 
                 }
 
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = keyState[i] ? '#aaa' : '#333';
-                ctx.fillStyle = keyState[i] ? '#222' : '#0a0a0a';
-
-                if (config.style === 'circle') {
-                    ctx.beginPath(); ctx.arc(centerX, config.hitPosition, config.noteRadius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                } else {
-                    ctx.fillRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32);
-                    ctx.strokeRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32);
-                }
+                ctx.lineWidth = 3; ctx.strokeStyle = keyState[i] ? '#aaa' : '#333'; ctx.fillStyle = keyState[i] ? '#222' : '#0a0a0a';
+                if (config.style === 'circle') { ctx.beginPath(); ctx.arc(centerX, config.hitPosition, config.noteRadius, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } 
+                else { ctx.fillRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32); ctx.strokeRect(x + 10, config.hitPosition - 16, config.laneWidth - 20, 32); }
             }
 
             if (!isPaused) {
-                // 2. Ripples
                 for (let i = ripples.length - 1; i >= 0; i--) {
-                    const r = ripples[i];
-                    ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha})`; ctx.lineWidth = 2; ctx.stroke();
-                    r.radius += 4; r.alpha -= 0.04;
+                    const r = ripples[i]; ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha})`; ctx.lineWidth = 2; ctx.stroke(); r.radius += 4; r.alpha -= 0.04;
                     if (r.alpha <= 0) ripples.splice(i, 1);
                 }
             }
 
-            // 3. Process & Render Chart Notes
             for (let note of notes) {
                 if (note.completed) continue;
                 const timeUntilHit = note.time - currentAudioTime;
                 
                 if (note.isHolding && !isPaused) {
-                    if (!keyState[note.lane]) {
-                        note.isHolding = false; note.completed = true; note.missed = true; registerHit("miss"); 
-                    } else if (currentAudioTime >= note.time + note.duration) {
-                        note.isHolding = false; note.completed = true; note.hit = true; registerHit("perfect"); 
-                    }
+                    if (!keyState[note.lane]) { note.isHolding = false; note.completed = true; note.missed = true; registerHit("miss"); } 
+                    else if (currentAudioTime >= note.time + note.duration) { note.isHolding = false; note.completed = true; note.hit = true; registerHit("perfect"); }
                 }
 
-                if (timeUntilHit < -config.hitWindows.miss && !note.headHit && !note.missed) {
-                    note.missed = true; note.completed = true; registerHit("miss");
-                }
-
+                if (timeUntilHit < -config.currentHitWindows.miss && !note.headHit && !note.missed) { note.missed = true; note.completed = true; registerHit("miss"); }
                 if (note.missed) continue;
 
                 let yHead = config.hitPosition - (timeUntilHit * config.scrollSpeed);
                 const tailTimeUntilHit = (note.time + note.duration) - currentAudioTime;
                 let yTail = config.hitPosition - (tailTimeUntilHit * config.scrollSpeed);
-
                 if (note.isHolding) yHead = config.hitPosition;
 
                 if (yTail < GAME_HEIGHT + 200 && yHead > -500) {
-                    const xPos = note.lane * config.laneWidth;
-                    const centerX = xPos + config.laneWidth / 2;
+                    const xPos = note.lane * config.laneWidth; const centerX = xPos + config.laneWidth / 2;
                     const c = (note.lane === 0 || note.lane === 3) ? activePalette.side : activePalette.mid;
                     
-                    // Draw Hold Body Trail
                     if (note.duration > 0) {
-                        ctx.fillStyle = activePalette.activeTrail;
-                        const bodyHeight = yHead - yTail;
+                        ctx.fillStyle = activePalette.activeTrail; const bodyHeight = yHead - yTail;
                         if (bodyHeight > 0) {
-                            if (config.style === 'circle') {
-                                ctx.fillRect(centerX - config.noteRadius, yTail, config.noteRadius * 2, bodyHeight);
-                                ctx.beginPath(); ctx.arc(centerX, yTail, config.noteRadius, 0, Math.PI * 2); ctx.fill();
-                            } else {
-                                ctx.fillRect(xPos + 10, yTail, config.laneWidth - 20, bodyHeight);
-                            }
+                            if (config.style === 'circle') { ctx.fillRect(centerX - config.noteRadius, yTail, config.noteRadius * 2, bodyHeight); ctx.beginPath(); ctx.arc(centerX, yTail, config.noteRadius, 0, Math.PI * 2); ctx.fill(); } 
+                            else ctx.fillRect(xPos + 10, yTail, config.laneWidth - 20, bodyHeight);
                         }
                     }
 
-                    // Draw Primary Note Head
                     ctx.fillStyle = c;
-                    if (config.style === 'circle') {
-                        ctx.beginPath(); ctx.arc(centerX, yHead, config.noteRadius, 0, Math.PI * 2); ctx.fill();
-                    } else {
-                        ctx.fillRect(xPos + 10, yHead - 16, config.laneWidth - 20, 32);
-                    }
+                    if (config.style === 'circle') { ctx.beginPath(); ctx.arc(centerX, yHead, config.noteRadius, 0, Math.PI * 2); ctx.fill(); } 
+                    else ctx.fillRect(xPos + 10, yHead - 16, config.laneWidth - 20, 32);
                 }
             }
 
-            // 4. Interface Overlays
-            ctx.fillStyle = '#666'; ctx.font = '400 16px "DM Sans"'; ctx.textAlign = 'left';
-            ctx.fillText(`score: ${stats.score}`, 20, 40);
+            ctx.fillStyle = '#666'; ctx.font = '400 16px "DM Sans"'; ctx.textAlign = 'left'; ctx.fillText(`score: ${stats.score}`, 20, 40);
             ctx.textAlign = 'center'; ctx.fillText(`acc: ${getAccuracy()}`, GAME_WIDTH / 2, 40);
-            ctx.textAlign = 'right'; ctx.fillStyle = stats.misses > 0 ? '#ff5555' : '#666';
-            ctx.fillText(`miss: ${stats.misses}`, GAME_WIDTH - 20, 40);
+            ctx.textAlign = 'right'; ctx.fillStyle = stats.misses > 0 ? '#ff5555' : '#666'; ctx.fillText(`miss: ${stats.misses}`, GAME_WIDTH - 20, 40);
 
             if (feedbackText.alpha > 0 && !isPaused) {
-                ctx.save(); feedbackText.yOffset -= 1;
-                ctx.translate(GAME_WIDTH / 2, config.hitPosition - 160 + feedbackText.yOffset);
-                ctx.scale(feedbackText.scale, feedbackText.scale);
-                ctx.fillStyle = feedbackText.color; ctx.globalAlpha = feedbackText.alpha;
-                ctx.font = '400 28px "DM Sans"'; ctx.textAlign = 'center';
-                ctx.fillText(feedbackText.text, 0, 0); ctx.restore();
+                ctx.save(); feedbackText.yOffset -= 1; ctx.translate(GAME_WIDTH / 2, config.hitPosition - 160 + feedbackText.yOffset);
+                ctx.scale(feedbackText.scale, feedbackText.scale); ctx.fillStyle = feedbackText.color; ctx.globalAlpha = feedbackText.alpha;
+                ctx.font = '400 28px "DM Sans"'; ctx.textAlign = 'center'; ctx.fillText(feedbackText.text, 0, 0); ctx.restore();
                 feedbackText.alpha -= 0.02; if (feedbackText.scale > 1.0) feedbackText.scale -= 0.01;
             }
 
             if (stats.combo > 5) {
                 const comboScale = isPaused ? 1 : 1 + (Math.sin(currentAudioTime * Math.PI * 8) * 0.05);
                 ctx.save(); ctx.translate(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80); ctx.scale(comboScale, comboScale);
-                ctx.fillStyle = '#eeeeee'; ctx.font = '700 48px "DM Sans"'; ctx.textAlign = 'center';
-                ctx.fillText(`${stats.combo}`, 0, 0);
-                ctx.font = '400 16px "DM Sans"'; ctx.fillStyle = '#666'; ctx.fillText("combo", 0, 25);
-                ctx.restore();
+                ctx.fillStyle = '#eeeeee'; ctx.font = '700 48px "DM Sans"'; ctx.textAlign = 'center'; ctx.fillText(`${stats.combo}`, 0, 0);
+                ctx.font = '400 16px "DM Sans"'; ctx.fillStyle = '#666'; ctx.fillText("combo", 0, 25); ctx.restore();
             }
 
             if (isPaused) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-                ctx.fillStyle = '#ffffff'; ctx.font = '700 40px "DM Sans"'; ctx.textAlign = 'center';
-                ctx.fillText('PAUSED', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+                ctx.fillStyle = '#ffffff'; ctx.font = '700 40px "DM Sans"'; ctx.textAlign = 'center'; ctx.fillText('PAUSED', GAME_WIDTH / 2, GAME_HEIGHT / 2);
             }
         }
     </script>
